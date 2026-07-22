@@ -1,0 +1,70 @@
+
+body {
+    background-color: #f8f9fa;
+}
+
+.accent-header {
+    background-color: #ffca28;
+    color: #333333;
+}
+
+.btn-accent {
+    background-color: #ffca28;
+    border: none;
+    color: #333333;
+    font-weight: 500;
+}
+
+.btn-accent:hover {
+    background-color: #e5b623;
+    color: #000000;
+}
+
+.action-btn-edit {
+    background-color: #ffca28;
+    color: #333333;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.action-btn-edit:hover {
+    background-color: #e5b623;
+    color: #000000;
+}
+
+.action-btn-delete {
+    background-color: #ffca28;
+    color: #d32f2f;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.action-btn-delete:hover {
+    background-color: #e5b623;
+    color: #b71c1c;
+}
+
+/* Payroll Action Button */
+.action-btn-pay {
+    background-color: #2e7d32;
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    border: none;
+}
+
+.action-btn-pay:hover {
+    background-color: #1b5e20;
+    color: #ffffff;
+}
