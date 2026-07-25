@@ -58,27 +58,24 @@
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title text-muted mb-0"><i class="bi bi-calendar-check me-2"></i> Attendance Log</h5>
+                    <h5 class="card-title text-muted mb-0">
+                        <i class="bi bi-calendar-check me-2"></i> Attendance Log
+                    </h5>
                     <div>
-                        <button class="btn btn-success btn-sm me-1"><i class="bi bi-box-arrow-in-right"></i> Clock In</button>
-                        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Clock Out</button>
+                        <button class="btn btn-success btn-sm" id="btnMarkPresent">
+                            <i class="bi bi-check-circle me-1"></i> Mark Present
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Clock In</th>
-                                <th>Clock Out</th>
-                                <th>Total Hours</th>
-                                <th>Status</th>
-                            </tr>
-                            </thead>
-                            <tbody id="attendanceTableBody"></tbody>
-                        </table>
+                    <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+                        <span>Less</span>
+                        <div class="attendance-box absent"></div>
+                        <div class="attendance-box present"></div>
+                        <span>Present</span>
                     </div>
+
+                    <div id="attendanceGrid" class="attendance-grid"></div>
                 </div>
             </div>
 
