@@ -1,1 +1,10 @@
-console.log('Happy developing ✨')
+//Login Checker
+function LogInChecker() {
+
+}
+
+//Signup Checker
+function SignUpChecker(){
+
+}
+
