@@ -68,3 +68,31 @@ body {
     background-color: #1b5e20;
     color: #ffffff;
 }
+
+.attendance-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+}
+
+.attendance-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.attendance-box:hover {
+    transform: scale(1.25);
+    outline: 2px solid #0d6efd;
+}
+
+.attendance-box.absent {
+    background-color: #ebedf0;
+}
+
+.attendance-box.present {
+    background-color: #198754;
+}

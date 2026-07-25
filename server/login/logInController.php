@@ -1,0 +1,62 @@
+<?php
+
+namespace login;
+
+use service\SessionManager;
+
+class logInController
+{
+
+    private logInService $service;
+    public function __construct(logInService $logInService){
+        $this->service = $logInService;
+    }
+
+    public function showLoginForm(){
+
+        if (isset($_SESSION['emp_id'])) {
+            echo json_encode([
+                'success'  => true,
+                'message'  => 'Already logged in.',
+                'redirect' => '/dashboard.php'
+            ]);
+            exit;
+        }
+    }
+    public function login(){
+
+        header('Content-Type: application/json');
+
+        $data = json_decode(file_get_contents("php://input"));
+
+        $password = $data['password'] ?? '';
+        $email = $data['email'] ?? '';
+
+        $user = $this->service->authenticateAccount($email, $password);
+
+        if($user){
+
+            SessionManager::setUserSession(
+                $user['emp_id'],
+                $user['emp_name'],
+                $user['emp_role']
+                );
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Logged in successfully',
+                'redirect' => '/dashboard.php',
+                'user' => [
+                    'name' => $user['emp_name'],
+                    'role' => $user['emp_role']
+            ]]);
+            exit;
+        }
+        else http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid email or password'
+        ]);
+        exit;
+    }
+}
