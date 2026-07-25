@@ -31,6 +31,7 @@ CREATE TABLE `accounts` (
 `acc_id` int(11) NOT NULL,
 `emp_id` int(11) NOT NULL,
 `acc_email` varchar(255) NOT NULL,
+`acc_role` ENUM('employee', 'admin') NOT NULL DEFAULT 'employee',
 `acc_password` varchar(255) NOT NULL,
 `acc_date_created` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
