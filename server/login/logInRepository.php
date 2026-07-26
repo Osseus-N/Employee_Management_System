@@ -16,7 +16,7 @@ class logInRepository
 
     public function logIn($emp_id){
 
-        $data = $this->db->select('employee' , "*", ['emp_id' => $emp_id]);
+        $data = $this->db->select('employees' , "*", ['emp_id' => $emp_id]);
         return $data->fetch_assoc();
     }
 
