@@ -13,11 +13,15 @@ class logInService
         $acc = $this->repository->isAccountExist($email);
 
         if($acc){
+
             $user =$this->repository->logIn($acc['emp_id']);
 
             if(!password_verify($password, $user['password'])){
                 return false;
             }
+
+            $user['role'] = $acc['acc_role'];
+            unset($user['password']);
 
             return $user;
         }

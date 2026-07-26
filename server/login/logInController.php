@@ -80,9 +80,8 @@ class logInController
             echo json_encode([
                 "success" => true,
                 "message" => "Logged in successfully",
-                "role" => $user["emp_position"],
-                "firstname" => $user["emp_firstname"],
-                "lastname" => $user["emp_lastname"],
+                "role" => $user["role"],
+                "data" => $user
             ]);
             exit;
         } else http_response_code(401);

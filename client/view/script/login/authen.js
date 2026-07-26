@@ -52,5 +52,5 @@ async function logout() {
     } catch (error) {
         console.log(error);
     }
-    window.location.href = "../../login/login.html";
+    window.location.href = "../../../../login/login.html";
 }
