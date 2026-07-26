@@ -17,7 +17,7 @@ class logInRepository
     public function logIn($emp_id){
 
         $data = $this->db->select('employee' , "*", ['emp_id' => $emp_id]);
-        return $data->fetch_assoc(MYSQLI_ASSOC);
+        return $data->fetch_assoc();
     }
 
     public function isAccountExist($acc_email){
@@ -25,7 +25,7 @@ class logInRepository
         $data = $this->db->select('accounts' , "*" , ['acc_email' => $acc_email]);
 
         if ($data && $data->num_rows > 0) {
-            return $data->fetch_assoc(MYSQLI_ASSOC);
+            return $data->fetch_assoc();
         }
 
         return null;
