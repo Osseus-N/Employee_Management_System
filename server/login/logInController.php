@@ -14,7 +14,7 @@ class logInController
 
     public function showLoginForm(){
 
-        if (isset($_SESSION['emp_id'])) {
+        if (SessionManager::isLoggedIn()) {
             echo json_encode([
                 'success'  => true,
                 'message'  => 'Already logged in.',
@@ -22,6 +22,8 @@ class logInController
             ]);
             exit;
         }
+
+        $this->login();
     }
     public function login(){
 
@@ -32,7 +34,7 @@ class logInController
         $password = $data['password'] ?? '';
         $email = $data['email'] ?? '';
 
-        $user = $this->service->authenticateAccount($email, $password);
+        $user = $this->service->authenticateAccount($_SESSION['emp_id'],$email, $password);
 
         if($user){
 
