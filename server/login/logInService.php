@@ -8,19 +8,22 @@ class logInService
     public function __construct(logInRepository $logInRepository ){
         $this->repository = $logInRepository;
     }
-    public function authenticateAccount(int $emp_id , mixed $email, mixed $password){
+    public function authenticateAccount(mixed $email, mixed $password){
 
-        if($this->repository->isAccountExist($emp_id)){
+        $acc = $this->repository->isAccountExist($email);
 
-            $user =$this->repository->logIn($emp_id);
+        if($acc){
+            $user =$this->repository->logIn($acc['emp_id']);
 
             if(!password_verify($password, $user['password'])){
                 return false;
             }
 
-            return true;
+            return $user;
         }
+        return false;
     }
+
 
 
 }

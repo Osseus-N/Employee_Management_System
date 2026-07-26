@@ -77,43 +77,32 @@ class Database
     public function select($table, $row = "*", $where = null)
     {
         try {
-
-            if ($where != null) {
-
-                $condition = "";
+            if (!empty($where) && is_array($where)) {
+                $conditions = [];
                 $types = "";
 
                 foreach ($where as $key => $value) {
-
-                    $condition .= "$key=? AND ";
+                    $conditions[] = "$key = ?";
                     $types .= substr(gettype($value), 0, 1);
-
                 }
 
-                $condition = substr($condition, 0, -5);
+                // Cleanly join conditions with " AND "
+                $conditionString = implode(' AND ', $conditions);
 
-                $sql = "SELECT $row FROM $table WHERE $condition";
-
+                $sql = "SELECT $row FROM $table WHERE $conditionString";
                 $stmt = $this->conn->prepare($sql);
-
                 $stmt->bind_param($types, ...array_values($where));
 
             } else {
-
                 $sql = "SELECT $row FROM $table";
-
                 $stmt = $this->conn->prepare($sql);
-
             }
 
             $stmt->execute();
-
             return $stmt->get_result();
 
         } catch (Exception $e) {
-
             die("Select Error: " . $e->getMessage());
-
         }
     }
 

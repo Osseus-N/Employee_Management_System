@@ -46,7 +46,7 @@ class logInController
 
     public function showLoginForm(){
 
-        if (SessionManager::isLoggedIn()) {
+        if (isset($_SESSION['emp_id'])) {
             echo json_encode([
                 'success'  => true,
                 'message'  => 'Already logged in.',
@@ -57,7 +57,8 @@ class logInController
 
         $this->login();
     }
-    public function login(){
+    public function login()
+    {
 
         header('Content-Type: application/json');
 
@@ -66,15 +67,15 @@ class logInController
         $password = $data['password'] ?? '';
         $email = $data['email'] ?? '';
 
-        $user = $this->service->authenticateAccount($_SESSION['emp_id'],$email, $password);
+        $user = $this->service->authenticateAccount($email, $password);
 
-        if($user){
+        if ($user) {
 
             SessionManager::setUserSession(
                 $user['emp_id'],
-                $user['emp_name'],
-                $user['emp_role']
-                );
+                $user['emp_firstname'],
+                $user['emp_position']
+            );
 
             echo json_encode([
                 "success" => true,
@@ -83,8 +84,7 @@ class logInController
                 "name" => $user["emp_name"]
             ]);
             exit;
-        }
-        else http_response_code(401);
+        } else http_response_code(401);
         echo json_encode([
             'success' => false,
             'message' => 'Invalid email or password'

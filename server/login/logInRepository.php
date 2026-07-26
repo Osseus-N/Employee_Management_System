@@ -16,13 +16,18 @@ class logInRepository
 
     public function logIn($emp_id){
 
-        $data = $this->db->select('accounts' , '', ['emp_id' => $emp_id]);
+        $data = $this->db->select('employee' , "*", ['emp_id' => $emp_id]);
         return $data->fetch_assoc(MYSQLI_ASSOC);
     }
 
-    public function isAccountExist($emp_id){
+    public function isAccountExist($acc_email){
 
-        $data = $this->db->select('accounts' , '', ['emp_id' => $emp_id]);
-        return $data->fetch_assoc(MYSQLI_ASSOC);
+        $data = $this->db->select('accounts' , "*" , ['acc_email' => $acc_email]);
+
+        if ($data && $data->num_rows > 0) {
+            return $data->fetch_assoc(MYSQLI_ASSOC);
+        }
+
+        return null;
     }
 }
