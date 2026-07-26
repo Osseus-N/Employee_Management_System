@@ -26,14 +26,6 @@ class logInController
                 $this->showLoginForm();
                 break;
 
-            case "DELETE":
-                SessionManager::destroySession();
-
-                echo json_encode([
-                    "success" => true
-                ]);
-                break;
-
             default:
                 http_response_code(405);
 

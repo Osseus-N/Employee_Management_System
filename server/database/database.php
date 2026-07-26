@@ -107,48 +107,50 @@ class Database
     }
 
     // Update Data
-    public function update($table, $data, $where)
+    public function update($table, array $data, array $where)
     {
         try {
+            if (empty($data) || empty($where)) {
+                return false;
+            }
 
-            $set = "";
-            $condition = "";
+            $setParts = [];
+            $whereParts = [];
             $types = "";
+            $values = [];
 
             foreach ($data as $key => $value) {
-
-                $set .= "$key=?,";
-                $types .= substr(gettype($value), 0, 1);
-
+                $setParts[] = "$key = ?";
+                $types .= $this->getTypeChar($value);
+                $values[] = $value;
             }
-
-            $set = rtrim($set, ",");
 
             foreach ($where as $key => $value) {
-
-                $condition .= "$key=? AND ";
-                $types .= substr(gettype($value), 0, 1);
-
+                $whereParts[] = "$key = ?";
+                $types .= $this->getTypeChar($value);
+                $values[] = $value;
             }
 
-            $condition = substr($condition, 0, -5);
+            $setSql = implode(", ", $setParts);
+            $whereSql = implode(" AND ", $whereParts);
 
-            $sql = "UPDATE $table SET $set WHERE $condition";
+            $sql = "UPDATE $table SET $setSql WHERE $whereSql";
 
             $stmt = $this->conn->prepare($sql);
-
-            $stmt->bind_param(
-                $types,
-                ...array_merge(array_values($data), array_values($where))
-            );
+            $stmt->bind_param($types, ...$values);
 
             return $stmt->execute();
 
         } catch (Exception $e) {
-
             die("Update Error: " . $e->getMessage());
-
         }
+    }
+
+    private function getTypeChar($value): string
+    {
+        if (is_int($value)) return "i";
+        if (is_float($value)) return "d";
+        return "s";
     }
 
     // Delete Data

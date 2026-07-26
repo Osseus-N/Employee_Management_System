@@ -278,7 +278,19 @@ async function loadPayroll() {
         console.log(error);
     }
 }
+document.addEventListener("DOMContentLoaded", function () {
+    checkUserRole();
+});
 
+function checkUserRole() {
+
+    const userRole = sessionStorage.getItem("role") || localStorage.getItem("role");
+    const adminBtn = document.getElementById("adminReturnBtn");
+
+    if (userRole && userRole.toLowerCase() === "admin") {
+        adminBtn.classList.remove("d-none");
+    }
+}
 //PAY OF EMPLOYEE
 
 async function payEmployee(id, month, year) {
