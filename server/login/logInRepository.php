@@ -19,4 +19,10 @@ class logInRepository
         $data = $this->db->select('accounts' , '', ['emp_id' => $emp_id]);
         return $data->fetch_assoc(MYSQLI_ASSOC);
     }
+
+    public function isAccountExist($emp_id){
+
+        $data = $this->db->select('accounts' , '', ['emp_id' => $emp_id]);
+        return $data->fetch_assoc(MYSQLI_ASSOC);
+    }
 }
