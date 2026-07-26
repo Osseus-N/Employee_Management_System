@@ -1,60 +1,196 @@
 <?php
 
-class database
+class Database
 {
     private mysqli $conn;
 
-    public function connect(){
+    // Connect to Database
+    public function connect()
+    {
+        try {
 
-        try{
-            $dsn ="mysql:host=localhost;dbname=user_db";
-            $this->conn = new mysqli( $dsn, "root", "", "employee_management" );
-        }catch(mysqli_sql_exception $e){
-            die ("Connection failed: " . $this->conn->connect_error);
+            $this->conn = new mysqli(
+                "localhost",
+                "root",
+                "",
+                "employee_management"
+            );
+
+            if ($this->conn->connect_error) {
+                die("Connection Failed: " . $this->conn->connect_error);
+            }
+
+        } catch (mysqli_sql_exception $e) {
+
+            die("Database Error: " . $e->getMessage());
+
         }
+
         return $this->conn;
     }
-    public function disconnect(){
-        $this->conn->close();
-    }
-    public function insert($table,$data)
-    {
-        try{
-            $table_columns = implode(",", array_keys($data));
-            $prep = $types = "";
 
-            foreach ($data as $key => $value) {
-                $prep .= "?,";
-                $types .= substr(gettype($value), 0, 1);
-            }
-            $prep = substr($prep, 0, -1);
-            $stmt = $this->conn->prepare("INSERT INTO $table ($table_columns) VALUES ($prep)");
-            $stmt->bind_param($types, ...array_values($data));
-            $stmt->execute();
-            $stmt->close();
-        }catch(Exception $e){
-            die('Insert Error: ' . $e->getMessage());
+    // Close Connection
+    public function disconnect()
+    {
+        if ($this->conn) {
+            $this->conn->close();
         }
     }
-    public function select($table, $row="*",$where=NULL){
-        try{
-            if(!is_null($where)){
-                $cond=$types="";
+
+    // Insert Data
+    public function insert($table, $data)
+    {
+        try {
+
+            $columns = implode(",", array_keys($data));
+
+            $values = "";
+            $types = "";
+
+            foreach ($data as $value) {
+
+                $values .= "?,";
+                $types .= substr(gettype($value), 0, 1);
+
+            }
+
+            $values = rtrim($values, ",");
+
+            $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+
+            $stmt = $this->conn->prepare($sql);
+
+            $stmt->bind_param($types, ...array_values($data));
+
+            $stmt->execute();
+
+            return true;
+
+        } catch (Exception $e) {
+
+            die("Insert Error: " . $e->getMessage());
+
+        }
+    }
+
+    // Select Data
+    public function select($table, $row = "*", $where = null)
+    {
+        try {
+
+            if ($where != null) {
+
+                $condition = "";
+                $types = "";
 
                 foreach ($where as $key => $value) {
-                    $cond.=$key."=? AND ";
+
+                    $condition .= "$key=? AND ";
                     $types .= substr(gettype($value), 0, 1);
+
                 }
-                $cond = substr($cond, 0, -4);
-                $stmt = $this->conn->prepare("SELECT $row FROM $table WHERE $cond");
+
+                $condition = substr($condition, 0, -5);
+
+                $sql = "SELECT $row FROM $table WHERE $condition";
+
+                $stmt = $this->conn->prepare($sql);
+
                 $stmt->bind_param($types, ...array_values($where));
-            }else {
-                $stmt = $this->conn->prepare("SELECT $row FROM $table");
+
+            } else {
+
+                $sql = "SELECT $row FROM $table";
+
+                $stmt = $this->conn->prepare($sql);
+
             }
+
             $stmt->execute();
-            $this->res = $stmt->get_result();
-        }catch(Exception $e){
-            die('Select Error: ' . $e->getMessage());
+
+            return $stmt->get_result();
+
+        } catch (Exception $e) {
+
+            die("Select Error: " . $e->getMessage());
+
+        }
+    }
+
+    // Update Data
+    public function update($table, $data, $where)
+    {
+        try {
+
+            $set = "";
+            $condition = "";
+            $types = "";
+
+            foreach ($data as $key => $value) {
+
+                $set .= "$key=?,";
+                $types .= substr(gettype($value), 0, 1);
+
+            }
+
+            $set = rtrim($set, ",");
+
+            foreach ($where as $key => $value) {
+
+                $condition .= "$key=? AND ";
+                $types .= substr(gettype($value), 0, 1);
+
+            }
+
+            $condition = substr($condition, 0, -5);
+
+            $sql = "UPDATE $table SET $set WHERE $condition";
+
+            $stmt = $this->conn->prepare($sql);
+
+            $stmt->bind_param(
+                $types,
+                ...array_merge(array_values($data), array_values($where))
+            );
+
+            return $stmt->execute();
+
+        } catch (Exception $e) {
+
+            die("Update Error: " . $e->getMessage());
+
+        }
+    }
+
+    // Delete Data
+    public function delete($table, $where)
+    {
+        try {
+
+            $condition = "";
+            $types = "";
+
+            foreach ($where as $key => $value) {
+
+                $condition .= "$key=? AND ";
+                $types .= substr(gettype($value), 0, 1);
+
+            }
+
+            $condition = substr($condition, 0, -5);
+
+            $sql = "DELETE FROM $table WHERE $condition";
+
+            $stmt = $this->conn->prepare($sql);
+
+            $stmt->bind_param($types, ...array_values($where));
+
+            return $stmt->execute();
+
+        } catch (Exception $e) {
+
+            die("Delete Error: " . $e->getMessage());
+
         }
     }
 }
