@@ -1,5 +1,5 @@
 //PANG FETCH
-const employeeAPI = "../../server/employee/employeeController.php";
+const employeeAPI = "../../../server/employee/employeeController.php";
 const attendanceAPI = "../../server/attendance/attendanceController.php";
 const payrollAPI = "../../server/payroll/payrollController.php";
 
@@ -24,6 +24,7 @@ async function loadEmployees() {
     try {
         const response = await fetch(employeeAPI);
         const result = await response.json();
+
         if (result.success) {
             employees = result.data;
             displayEmployees(employees);
@@ -31,6 +32,7 @@ async function loadEmployees() {
         } else {
             alert(result.message);
         }
+
     } catch (error) {
         console.log(error);
         alert("Cannot connect to server.");
@@ -85,73 +87,84 @@ function searchEmployee() {
 
 //EMPLOYEE SELECTING
 function selectEmployee(id) {
+
     selectedID = id;
+
     const emp = employees.find(e => e.emp_id == id);
+
     if (!emp) return;
-    document.getElementById("firstname").value =
-        emp.emp_firstname;
 
-    document.getElementById("lastname").value =
-        emp.emp_lastname;
+    document.getElementById("firstName").value = emp.emp_firstname;
+    document.getElementById("lastName").value = emp.emp_lastname;
 
-    document.getElementById("gender").value =
-        emp.emp_gender;
+    if (emp.emp_gender === "Male") {
+        document.getElementById("male").checked = true;
+    } else if (emp.emp_gender === "Female") {
+        document.getElementById("female").checked = true;
+    }
 
-    document.getElementById("position").value =
-        emp.emp_position;
-
-    document.getElementById("hourly_rate").value =
-        emp.emp_hourly_rate;
-
-    document.getElementById("status").value =
-        emp.emp_status;
+    document.getElementById("dob").value = emp.emp_date_of_birth;
+    document.getElementById("contactNumber").value = emp.emp_contact_number ?? "";
+    document.getElementById("position").value = emp.emp_position;
+    document.getElementById("hourlyRate").value = emp.emp_hourly_rate;
+    document.getElementById("status").value = emp.emp_status;
 }
 
 //FOR CLEANING FORM
 function clearForm() {
+
     selectedID = null;
 
-    document.getElementById("firstname").value = "";
-    document.getElementById("lastname").value = "";
-    document.getElementById("gender").value = "Male";
+    document.getElementById("firstName").value = "";
+    document.getElementById("lastName").value = "";
+    document.getElementById("male").checked = true;
+    document.getElementById("dob").value = "";
+    document.getElementById("contactNumber").value = "";
     document.getElementById("position").value = "";
-    document.getElementById("hourly_rate").value = "";
+    document.getElementById("hourlyRate").value = "";
     document.getElementById("status").value = "Active";
+
 }
 
 
 //ADD EMPLOYEE
 async function addEmployee() {
+
     if (!validateEmployee()) return;
+
     const employee = {
-
-        emp_firstname: document.getElementById("firstname").value,
-        emp_lastname: document.getElementById("lastname").value,
-        emp_gender: document.getElementById("gender").value,
+        emp_firstname: document.getElementById("firstName").value,
+        emp_lastname: document.getElementById("lastName").value,
+        emp_gender: document.querySelector('input[name="gender"]:checked').value,
+        emp_date_of_birth: document.getElementById("dob").value,
         emp_position: document.getElementById("position").value,
-        emp_hourly_rate: document.getElementById("hourly_rate").value,
-        emp_status: document.getElementById("status").value
+        emp_hourly_rate: document.getElementById("hourlyRate").value,
 
+        // optional fields
+        emp_contact_number: "",
+        emp_status: "Active"
     };
 
     try {
-        const response = await fetch(employeeAPI, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
+
+        const response = await fetch(employeeAPI,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
             },
-            body: JSON.stringify(employee)
+            body:JSON.stringify(employee)
         });
 
         const result = await response.json();
+
         alert(result.message);
 
-        if (result.success) {
+        if(result.success){
             clearForm();
             loadEmployees();
         }
 
-    } catch (error) {
+    } catch(error){
         console.log(error);
         alert("Unable to add employee.");
     }
@@ -168,11 +181,13 @@ async function updateEmployee() {
     if (!validateEmployee()) return;
     const employee = {
         emp_id: selectedID,
-        emp_firstname: document.getElementById("firstname").value,
-        emp_lastname: document.getElementById("lastname").value,
-        emp_gender: document.getElementById("gender").value,
+        emp_firstname: document.getElementById("firstName").value,
+        emp_lastname: document.getElementById("lastName").value,
+        emp_gender: document.querySelector('input[name="gender"]:checked').value,
         emp_position: document.getElementById("position").value,
-        emp_hourly_rate: document.getElementById("hourly_rate").value,
+        emp_date_of_birth: document.getElementById("dob").value,
+        emp_contact_number: document.getElementById("contactNumber").value,
+        emp_hourly_rate: document.getElementById("hourlyRate").value,
         emp_status: document.getElementById("status").value
     };
 
