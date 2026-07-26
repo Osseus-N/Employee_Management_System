@@ -39,7 +39,7 @@ class payrollController
                 break;
         }
     }
-    public function getMonthlyPayroll(){
+    private function getMonthlyPayroll(){
 
         header("Content-type: application/json");
 
@@ -51,7 +51,7 @@ class payrollController
 
         echo json_encode($payroll);
     }
-    public function payEmployee(){
+    private function payEmployee(){
 
         header("Content-type: application/json");
 
@@ -66,14 +66,13 @@ class payrollController
             exit;
         }
 
-        SessionManager::isLoggedIn();
-        
         $employee = $this->employee->getEmployee($data['emp_id']);
         $presentDays = $this->attendance->presentAttendance($employee , $data['month'], $data['year']);
 
         $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays);
 
         if ($saved) {
+            http_response_code(200);
             echo json_encode([
                 'success' => true,
                 'message' => 'Paid Employee Successfully',

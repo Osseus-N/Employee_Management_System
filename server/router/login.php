@@ -2,9 +2,9 @@
 
 use login\logInRepository;
 
-require_once __DIR__ . '/logInRepository.php';
-require_once __DIR__ . '/logInService.php';
-require_once __DIR__ . '/logInController.php';
+require_once __DIR__ . '/../login/logInRepository.php';
+require_once __DIR__ . '/../login/logInService.php';
+require_once __DIR__ . '/../login/logInController.php';
 require_once __DIR__ . '/../database/database.php';
 require_once __DIR__ . '/../session/sessionManager.php';
 

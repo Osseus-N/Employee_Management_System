@@ -16,7 +16,9 @@ class employeeController
 
         SessionManager::init();
 
-        switch($_SERVER["REQUEST_METHOD"]){
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        switch($method){
             case "GET":
                 $this->handleEmployees();
                 break;
@@ -62,6 +64,7 @@ class employeeController
         $user = $this->service->editEmployee($emp_id, $data);
 
         if($user){
+            http_response_code(200);
             echo json_encode([
                 "success" => true,
                 "message" => "Employee updated successfully",
