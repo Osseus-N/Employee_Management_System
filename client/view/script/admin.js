@@ -19,55 +19,114 @@ window.onload = function () {
     }
 };
 
+const employeeForm = document.getElementById("employeeForm");
+
+if (employeeForm) {
+
+    employeeForm.addEventListener("submit", function (e) {
+
+        e.preventDefault();
+
+    });
+
+}
+
 //PANG LOAD NG EMPLOYEE
 async function loadEmployees() {
     try {
+
         const response = await fetch(employeeAPI);
         const result = await response.json();
 
         if (result.success) {
+
             employees = result.data;
+
             displayEmployees(employees);
+
             updateDashboard();
+
         } else {
+
             alert(result.message);
+
         }
 
     } catch (error) {
-        console.log(error);
+
+        console.error(error);
         alert("Cannot connect to server.");
+
     }
 }
 
 //TABLE DISPLAY
 function displayEmployees(data) {
+
     const table = document.getElementById("employeeTableBody");
+
     if (!table) return;
+
     table.innerHTML = "";
 
-    if (data.length == 0) {
+    if (data.length === 0) {
+
         table.innerHTML =
-            "<tr><td colspan='8'>No Employees Found</td></tr>";
+            "<tr><td colspan='11' class='text-center'>No Employees Found</td></tr>";
+
         return;
     }
 
     data.forEach(emp => {
+
         table.innerHTML += `
         <tr>
-            <td>${emp.emp_id}</td>
-            <td>${emp.emp_firstname}</td>
-            <td>${emp.emp_lastname}</td>
-            <td>${emp.emp_gender}</td>
-            <td>${emp.emp_position}</td>
-            <td>${emp.emp_hourly_rate}</td>
-            <td>${emp.emp_status}</td>
+
             <td>
-                <button onclick="selectEmployee(${emp.emp_id})">Edit</button>
-                <button onclick="deleteEmployee(${emp.emp_id})">Delete</button>
+                <input class="form-check-input" type="checkbox">
             </td>
+
+            <td>${emp.emp_firstname}</td>
+
+            <td>${emp.emp_lastname}</td>
+
+            <td>${emp.emp_date_of_birth}</td>
+
+            <td>${emp.emp_contact_number ?? ""}</td>
+
+            <td>${emp.emp_gender}</td>
+
+            <td>${emp.emp_position}</td>
+
+            <td>$${emp.emp_hourly_rate}</td>
+
+            <td>${emp.emp_status}</td>
+
+            <td class="text-center">
+                <button
+                    class="btn btn-warning btn-sm"
+                    onclick="selectEmployee(${emp.emp_id})">
+
+                    <i class="bi bi-pencil"></i>
+
+                </button>
+            </td>
+
+            <td class="text-center">
+                <button
+                    class="btn btn-danger btn-sm"
+                    onclick="deleteEmployee(${emp.emp_id})">
+
+                    <i class="bi bi-trash"></i>
+
+                </button>
+            </td>
+
         </tr>
         `;
+
     });
+
 }
 
 //SEARCH FOR EMPLOYEE
@@ -94,20 +153,41 @@ function selectEmployee(id) {
 
     if (!emp) return;
 
-    document.getElementById("firstName").value = emp.emp_firstname;
-    document.getElementById("lastName").value = emp.emp_lastname;
+    document.getElementById("firstName").value =
+        emp.emp_firstname;
+
+    document.getElementById("lastName").value =
+        emp.emp_lastname;
+
+    document.getElementById("dob").value =
+        emp.emp_date_of_birth;
+
+    document.getElementById("contactNumber").value =
+        emp.emp_contact_number ?? "";
+
+    document.getElementById("position").value =
+        emp.emp_position;
+
+    document.getElementById("hourlyRate").value =
+        emp.emp_hourly_rate;
+
+    document.getElementById("status").value =
+        emp.emp_status;
 
     if (emp.emp_gender === "Male") {
+
         document.getElementById("male").checked = true;
+
     } else if (emp.emp_gender === "Female") {
+
         document.getElementById("female").checked = true;
+
+    } else {
+
+        document.getElementById("other").checked = true;
+
     }
 
-    document.getElementById("dob").value = emp.emp_date_of_birth;
-    document.getElementById("contactNumber").value = emp.emp_contact_number ?? "";
-    document.getElementById("position").value = emp.emp_position;
-    document.getElementById("hourlyRate").value = emp.emp_hourly_rate;
-    document.getElementById("status").value = emp.emp_status;
 }
 
 //FOR CLEANING FORM
@@ -115,13 +195,10 @@ function clearForm() {
 
     selectedID = null;
 
-    document.getElementById("firstName").value = "";
-    document.getElementById("lastName").value = "";
+    document.getElementById("employeeForm").reset();
+
     document.getElementById("male").checked = true;
-    document.getElementById("dob").value = "";
-    document.getElementById("contactNumber").value = "";
-    document.getElementById("position").value = "";
-    document.getElementById("hourlyRate").value = "";
+
     document.getElementById("status").value = "Active";
 
 }
@@ -133,16 +210,31 @@ async function addEmployee() {
     if (!validateEmployee()) return;
 
     const employee = {
-        emp_firstname: document.getElementById("firstName").value,
-        emp_lastname: document.getElementById("lastName").value,
-        emp_gender: document.querySelector('input[name="gender"]:checked').value,
-        emp_date_of_birth: document.getElementById("dob").value,
-        emp_position: document.getElementById("position").value,
-        emp_hourly_rate: document.getElementById("hourlyRate").value,
 
-        // optional fields
-        emp_contact_number: "",
-        emp_status: "Active"
+        emp_firstname:
+        document.getElementById("firstName").value,
+
+        emp_lastname:
+        document.getElementById("lastName").value,
+
+        emp_gender:
+        document.querySelector('input[name="gender"]:checked').value,
+
+        emp_date_of_birth:
+        document.getElementById("dob").value,
+
+        emp_contact_number:
+        document.getElementById("contactNumber").value,
+
+        emp_position:
+        document.getElementById("position").value,
+
+        emp_hourly_rate:
+        document.getElementById("hourlyRate").value,
+
+        emp_status:
+        document.getElementById("status").value
+
     };
 
     try {
@@ -180,15 +272,33 @@ async function updateEmployee() {
     }
     if (!validateEmployee()) return;
     const employee = {
+
         emp_id: selectedID,
-        emp_firstname: document.getElementById("firstName").value,
-        emp_lastname: document.getElementById("lastName").value,
-        emp_gender: document.querySelector('input[name="gender"]:checked').value,
-        emp_position: document.getElementById("position").value,
-        emp_date_of_birth: document.getElementById("dob").value,
-        emp_contact_number: document.getElementById("contactNumber").value,
-        emp_hourly_rate: document.getElementById("hourlyRate").value,
-        emp_status: document.getElementById("status").value
+
+        emp_firstname:
+        document.getElementById("firstName").value,
+
+        emp_lastname:
+        document.getElementById("lastName").value,
+
+        emp_gender:
+        document.querySelector('input[name="gender"]:checked').value,
+
+        emp_date_of_birth:
+        document.getElementById("dob").value,
+
+        emp_contact_number:
+        document.getElementById("contactNumber").value,
+
+        emp_position:
+        document.getElementById("position").value,
+
+        emp_hourly_rate:
+        document.getElementById("hourlyRate").value,
+
+        emp_status:
+        document.getElementById("status").value
+
     };
 
     try {
