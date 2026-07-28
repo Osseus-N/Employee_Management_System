@@ -14,11 +14,7 @@ class logInRepository
         $this->db = $db;
     }
 
-    public function logIn($emp_id){
 
-        $data = $this->db->select('employees' , "*", ['emp_id' => $emp_id]);
-        return $data->fetch_assoc();
-    }
 
     public function isAccountExist($acc_email){
 
