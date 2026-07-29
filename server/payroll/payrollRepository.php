@@ -12,10 +12,14 @@ public function __construct(Database $db){
     $this->db = $db;
     $this->conn = $this->db->connect();
 }
-public function payEmployee(){
+public function payEmployee($data){
+
+    return $this->db->insert('payroll', $data);
 
 }
-public function getMonthlyPayroll(){
+public function getMonthlyPayroll($emp_id){
 
+    $data = $this->db->select('payroll','*',  ['emp_id' => $emp_id]);
+    return $data->fetch_assoc();
 }
 }

@@ -14,6 +14,5 @@ class payrollService
     {
         $amount = $hourly_rate * $presentDays;
 
-
     }
 }

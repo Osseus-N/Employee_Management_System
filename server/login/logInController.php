@@ -51,7 +51,6 @@ class logInController extends ResponseController
         $email = trim($data['email'] ?? '');
         $password = $data['password'] ?? '';
 
-        // Basic validation check before querying service
         if (empty($email) || empty($password)) {
             $this->error('Email and password are required', 400);
         }

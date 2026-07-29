@@ -79,7 +79,7 @@ class adminRepository
             throw new \Exception("Failed to register employee and account: " . $e->getMessage());
         }
     }
-    public function updateEmployee($data){
+    public function updateEmployee($data, $where){
         $data = $this->editEmployee($table, $data, $where);
 
         if ($data && $data->num_rows > 0) {
