@@ -9,46 +9,75 @@ class adminService
 {
     private adminRepository $adminRepository;
     public function __construct(adminRepository $adminRepository){
-    $this->adminRepository = $adminRepository;
+        $this->adminRepository = $adminRepository;
     }
 
     public function getAllEmployee(){
+        return $this->adminRepository->getAllEmployees();
 
     }
-    public function createEmployee(array $requestData)
+    public function searchEmployee(string $search):array{
+
+        $cleanSearch = trim($search);
+
+        if (empty($cleanSearchTerm)) {
+            return [];
+        }
+
+        return $this->adminRepository->searchEmployee($cleanSearchTerm);
+    }
+    public function createEmployee(array $data)
     {
-        // Create domain object
+
+        if (empty($data['emp_firstname']) || empty($data['emp_lastname']) || empty($data['user_email']) || empty($data['user_password'])) {
+            throw new \InvalidArgumentException("Missing mandatory fields: firstname, lastname, email, or password.");
+        }
+        
         $employee = new Employee(
-            $requestData['firstname'],
-            $requestData['lastname'],
-            $requestData['gender'],
-            $requestData['position'],
-            (float) ($requestData['hourly_rate'] ?? 0.00),
-            $requestData['dob'] ?? null,
-            $requestData['contact'] ?? null
+            $data['firstname'],
+            $data['lastname'],
+            $data['gender'],
+            $data['position'],
+            (float) ($data['hourly_rate'] ?? 0.00),
+            $data['dob'] ?? null,
+            $data['contact'] ?? null
         );
-
-        $email = $requestData['email'];
-        $password = $requestData['password']; // Raw password string from request
-
-        return $this->repository->registerEmployeeWithAccount($employee, $email, $password);
+        return $this->adminRepository->createEmployee($employee,
+            trim($data['email']), $data['password']);
     }
     public function editEmployee(mixed $data)
     {
-        $emp = $this->employeeService->getEmployee($data['emp_id']);
-
-        if($emp){
-
+        if (empty($empId) || empty($data)) {
+            return false;
         }
+
+        $updateFields = [];
+
+        if (!empty($data['firstname']))      $updateFields['emp_firstname']      = $data['firstname'];
+        if (!empty($data['lastname']))       $updateFields['emp_lastname']       = $data['lastname'];
+        if (!empty($data['gender']))         $updateFields['emp_gender']         = $data['gender'];
+        if (!empty($data['position']))       $updateFields['emp_position']       = $data['position'];
+        if (isset($data['hourly_rate']))     $updateFields['emp_hourly_rate']    = (float) $data['hourly_rate'];
+        if (isset($data['dob']))             $updateFields['emp_date_of_birth']  = $data['dob'];
+        if (isset($data['contact_number']))  $updateFields['emp_contact_number'] = $data['contact_number'];
+        if (isset($data['status']))          $updateFields['emp_status']         = $data['status'];
+
+        if (empty($updateFields)) {
+            return false;
+        }
+
+        $where = ['emp_id' => $empId];
+
+        return $this->adminRepository->updateEmployee($updateFields, $where, 'employees');
     }
 
+    public function deleteEmployee(mixed $emp_id){
 
+        if(empty($emp_id)){
+            return false;
+        }
 
-    public function deleteEmployee(mixed $emp_id)
-    {
-    }
-
-    public function searchEmployee(mixed $search)
-    {
+        $this->adminRepository->deleteEmployee($emp_id);
+        return true;
     }
 }

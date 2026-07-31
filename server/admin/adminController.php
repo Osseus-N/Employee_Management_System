@@ -112,7 +112,7 @@ class adminController extends responseController
     {
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        if (empty($data['emp_id'])) {
+        if ($data) {
             $this->error('Employee ID is required for deletion', 400);
         }
 

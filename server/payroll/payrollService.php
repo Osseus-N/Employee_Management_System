@@ -5,8 +5,7 @@ namespace payroll;
 class payrollService
 {
 
-    public function getMonthlyPayroll()
-    {
+    public function getMonthlyPayroll(){
 
     }
 

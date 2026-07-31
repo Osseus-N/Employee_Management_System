@@ -3,7 +3,7 @@
 namespace attendance;
 
 use service\SessionManager;
-use response\responseController; // Extend or import your response handler class
+use response\responseController;
 
 class attendanceController extends responseController
 {
