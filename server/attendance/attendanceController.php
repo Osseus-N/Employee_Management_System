@@ -3,19 +3,19 @@
 namespace attendance;
 
 use service\SessionManager;
+use response\responseController; // Extend or import your response handler class
 
-class attendanceController
+class attendanceController extends responseController
 {
     private AttendanceService $service;
 
-    public function __construct(AttendanceService $attendanceService){
-
+    public function __construct(AttendanceService $attendanceService)
+    {
         $this->service = $attendanceService;
-
     }
-    public function handleRequest(){
 
-        header('Content-type: application/json');
+    public function handleRequest(): void
+    {
         $method = $_SERVER['REQUEST_METHOD'];
 
         switch ($method) {
@@ -26,62 +26,48 @@ class attendanceController
                 $this->markAttendance();
                 break;
             default:
-                http_response_code(405);
-                echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+                $this->error('Method not allowed', 405);
                 break;
         }
     }
-    public function getMonthlyAttendance(): void
+
+    private function getMonthlyAttendance(): void
     {
-
-        header('Content-type: application/json');
-
         SessionManager::isLoggedIn();
 
         $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
         $month = isset($_GET['month']) ? (string)$_GET['month'] : null;
-        $year = isset($_GET['year']) ? (string)$_GET['year'] : null;
+        $year  = isset($_GET['year']) ? (string)$_GET['year'] : null;
 
-        $attendanceDate=$this->service->getMonthlyAttendance($empId, $month, $year);
+        $attendanceData = $this->service->getMonthlyAttendance($empId, $month, $year);
 
-        echo json_encode(['success' => true, 'data' => $attendanceDate]);
+        $this->success('Monthly attendance retrieved successfully', $attendanceData);
     }
-    public function markAttendance(): void
+
+    private function markAttendance(): void
     {
-
-        header('Content-Type: application/json');
-
-        $data = json_decode(file_get_contents("php://input"));
-
         SessionManager::isLoggedIn();
 
-        if (!$data || !isset($data['emp_id'])) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid or missing parameters.'
-            ]);
-            exit;
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+
+        if (empty($data['emp_id']) || empty($data['status']) || empty($data['date'])) {
+            $this->error('Invalid or missing parameters (emp_id, date, status required).', 400);
         }
 
-        $saved = $this->service->recordAttendance($data['emp_id'], $data['date'] , $data['status']);
+        $saved = $this->service->recordAttendance(
+            $data['emp_id'],
+            $data['date'],
+            $data['status']
+        );
 
         if ($saved) {
-            echo json_encode([
-                'success' => true,
-                'message' => 'Attendance logged successfully',
-                'data' => [
-                    'emp_id' => $data['emp_id'],
-                    'status' => $data['status']
-                ]
-            ]);
-        } else {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Database operation failed.'
-            ]);
+            $this->success('Attendance logged successfully', [
+                'emp_id' => $data['emp_id'],
+                'status' => $data['status'],
+                'date'   => $data['date']
+            ], 200);
         }
 
+        $this->error('Database operation failed.', 500);
     }
 }

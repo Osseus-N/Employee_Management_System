@@ -1,6 +1,9 @@
 <?php
+
 namespace login;
+
 use service\SessionManager;
+
 class logInController
 {
 
