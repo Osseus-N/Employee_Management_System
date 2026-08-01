@@ -28,8 +28,4 @@ class employeeService
         }
         return null;
     }
-
-    public function createEmployee(array $data)
-    {
-    }
 }

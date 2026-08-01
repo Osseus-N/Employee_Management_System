@@ -46,9 +46,9 @@ class payrollController extends responseController
 
         SessionManager::isLoggedIn();
 
-        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
+        $emp_Id = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
 
-        $payroll = $this->payrollService->getMonthlyPayroll($empId);
+        $payroll = $this->payrollService->getMonthlyPayroll($emp_Id);
 
         $this->success($payroll);
     }
@@ -65,7 +65,7 @@ class payrollController extends responseController
         $employee = $this->employee->getEmployee($data['emp_id']);
         $presentDays = $this->attendance->presentAttendance($employee , $data['month'], $data['year']);
 
-        $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays);
+        $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays['data']);
 
         ($saved) ? $this->success('Paid Employee Successfully',['data' => [
             'emp_id' => $data['emp_id'],

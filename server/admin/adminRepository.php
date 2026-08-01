@@ -31,15 +31,19 @@ class adminRepository
     }
     public function getAllEmployees(): array
     {
-        $employees = $this->db->select('employees', '*' );
+        $employees = $this->db->select('employees', '*');
 
-        $result = $employees->fetch_assoc();
+        if (!$employees) {
+            return [];
+        }
+
+        $rows = $result->fetch_all(MYSQLI_ASSOC);
 
         $users = [];
-
-        foreach ($result as $row) {
+        foreach ($rows as $row) {
             $users[] = $this->rowToEmployee($row);
         }
+
         return $users;
     }
     public function createEmployee(Employee $employee, string $email, string $rawPassword): bool

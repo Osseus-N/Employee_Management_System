@@ -26,13 +26,25 @@ class adminService
 
         return $this->adminRepository->searchEmployee($cleanSearchTerm);
     }
+
+    /**
+     * @throws \Exception
+     */
     public function createEmployee(array $data)
     {
 
         if (empty($data['emp_firstname']) || empty($data['emp_lastname']) || empty($data['user_email']) || empty($data['user_password'])) {
             throw new \InvalidArgumentException("Missing mandatory fields: firstname, lastname, email, or password.");
         }
-        
+
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException("Invalid email format.");
+        }
+
+        if (strlen($data['password']) < 8) {
+            throw new \InvalidArgumentException("Password must be at least 8 characters.");
+        }
+
         $employee = new Employee(
             $data['firstname'],
             $data['lastname'],
@@ -42,8 +54,7 @@ class adminService
             $data['dob'] ?? null,
             $data['contact'] ?? null
         );
-        return $this->adminRepository->createEmployee($employee,
-            trim($data['email']), $data['password']);
+         return $this->adminRepository->createEmployee($employee, trim($data['email']), $data['password']);
     }
     public function editEmployee(mixed $data)
     {

@@ -94,7 +94,7 @@ class adminController extends responseController
             $this->error('Missing required fields: firstname, lastname, email.', 400);
         }
 
-        $created = $this->employeeService->createEmployee($data);
+        $created = $this->adminService->createEmployee($data);
 
         ($created) ? $this->success('Employee created successfully', $created, 201)
                     :$this->error('Failed to create employee', 500);
@@ -143,7 +143,7 @@ class adminController extends responseController
             $this->error('Employee ID is required', 400);
         }
 
-        $updated = $this->employeeService->editEmployee($data['emp_id'], $data);
+        $updated = $this->adminService->editEmployee($data['emp_id'], $data);
 
         ($updated) ? $this->success('Employee successfully updated', [
             'emp_id' => $data['emp_id']])
