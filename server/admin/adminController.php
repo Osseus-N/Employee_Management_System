@@ -89,20 +89,26 @@ class adminController extends responseController
 
     public function createEmployee(array $data = []): void
     {
-        // Basic required field validation
-        if (empty($data['firstname']) || empty($data['lastname']) || empty($data['email'])) {
-            $this->error('Missing required fields: firstname, lastname, email.', 400);
+        if (
+            empty($data['emp_firstname']) ||
+            empty($data['emp_lastname']) ||
+            empty($data['emp_gender']) ||
+            empty($data['emp_date_of_birth']) ||
+            empty($data['emp_position']) ||
+            empty($data['emp_hourly_rate']) ||
+            empty($data['emp_status'])
+        ) {
+            $this->error("Please fill in all required fields.", 400);
         }
 
         $created = $this->employeeService->createEmployee($data);
 
         if ($created) {
-            $this->success('Employee created successfully', $created, 201);
+            $this->success("Employee created successfully", $created, 201);
         }
 
-        $this->error('Failed to create employee', 500);
+        $this->error("Failed to create employee.", 500);
     }
-
     public function searchEmployee(string $searchTerm): void
     {
         $employees = $this->adminService->searchEmployee($searchTerm);

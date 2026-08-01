@@ -1,4 +1,4 @@
-const employeeAPI = "../../../server/employee/employeeController.php";
+const employeeAPI = "../../../server/admin/adminController.php";
 let employees = [];
 let selectedEmployee = null;
 
@@ -78,6 +78,42 @@ function renderEmployees(data) {
 
 }
 
+function createStatusBadge(status) {
+
+    switch (status) {
+
+        case "Active":
+            return `
+                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    Active
+                </span>
+            `;
+
+        case "Inactive":
+            return `
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
+                    Inactive
+                </span>
+            `;
+
+        case "Terminated":
+            return `
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                    Terminated
+                </span>
+            `;
+
+        default:
+            return `
+                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                    Unknown
+                </span>
+            `;
+
+    }
+
+}
+
 function createEmployeeRow(emp) {
 
     return `
@@ -123,9 +159,9 @@ function createEmployeeRow(emp) {
 function searchEmployee() {
     const keyword = document.getElementById("searchEmployee").value.toLowerCase();
     const filtered = employees.filter(emp =>
-        emp.emp_firstname.toLowerCase().includes(keyword) ||
-        emp.emp_lastname.toLowerCase().includes(keyword) ||
-        emp.emp_position.toLowerCase().includes(keyword)
+        (emp.emp_firstname ?? "").toLowerCase().includes(keyword) ||
+        (emp.emp_lastname ?? "").toLowerCase().includes(keyword) ||
+        (emp.emp_position ?? "").toLowerCase().includes(keyword)
     );
 
     renderEmployees(filtered);
@@ -169,27 +205,17 @@ function closeEmployeeModal() {
 
 }
 
-function closeEmployeeModal() {
-
-    document.getElementById("employeeModal")
-        .classList.add("hidden");
-
-    document.getElementById("employeeModal")
-        .classList.remove("flex");
-
-}
-
 function selectEmployee(id) {
     selectedEmployee = employees.find(emp => emp.emp_id == id);
 
     if (!selectedEmployee) return;
-    firstName.value = selectedEmployee.emp_firstname;
-    lastName.value = selectedEmployee.emp_lastname;
-    dob.value = selectedEmployee.emp_date_of_birth;
-    contactNumber.value = selectedEmployee.emp_contact_number;
-    position.value = selectedEmployee.emp_position;
-    hourlyRate.value = selectedEmployee.emp_hourly_rate;
-    status.value = selectedEmployee.emp_status;
+    document.getElementById("firstName").value = selectedEmployee.emp_firstname;
+    document.getElementById("lastName").value = selectedEmployee.emp_lastname;
+    document.getElementById("dob").value = selectedEmployee.emp_date_of_birth;
+    document.getElementById("contactNumber").value = selectedEmployee.emp_contact_number;
+    document.getElementById("position").value = selectedEmployee.emp_position;
+    document.getElementById("hourlyRate").value = selectedEmployee.emp_hourly_rate;
+    document.getElementById("status").value = selectedEmployee.emp_status;
 
     document.getElementById(
         selectedEmployee.emp_gender.toLowerCase()
@@ -210,14 +236,30 @@ async function saveEmployee(event) {
 
     event.preventDefault();
 
+    const data = getEmployeeData();
+
+    if (
+        !data.emp_firstname ||
+        !data.emp_lastname ||
+        !data.emp_date_of_birth ||
+        !data.emp_position ||
+        !data.emp_hourly_rate
+    ) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+    if (
+        data.emp_contact_number &&
+        !/^09\d{9}$/.test(data.emp_contact_number)
+    ) {
+        alert("Please enter a valid Philippine mobile number.");
+        return;
+    }
+
     if (selectedEmployee) {
-
         await updateEmployee();
-
     } else {
-
         await addEmployee();
-
     }
 
 }
@@ -225,18 +267,15 @@ async function saveEmployee(event) {
 function getEmployeeData() {
     return {
 
-        emp_firstname: firstName.value.trim(),
-        emp_lastname: lastName.value.trim(),
-        emp_date_of_birth: dob.value,
-        emp_contact_number: contactNumber.value.trim(),
-        emp_position: position.value.trim(),
-        emp_hourly_rate: hourlyRate.value,
-        emp_status: status.value,
-        emp_gender: document.querySelector(
-            "input[name='gender']:checked"
-        ).value
-
-    };
+            emp_firstname: document.getElementById("firstName").value.trim(),
+            emp_lastname: document.getElementById("lastName").value.trim(),
+            emp_date_of_birth: document.getElementById("dob").value,
+            emp_contact_number: document.getElementById("contactNumber").value.trim(),
+            emp_position: document.getElementById("position").value.trim(),
+            emp_hourly_rate: document.getElementById("hourlyRate").value,
+            emp_status: document.getElementById("status").value,
+            emp_gender: document.querySelector("input[name='gender']:checked").value
+        };
 
 }
 
@@ -317,7 +356,7 @@ async function deleteEmployee(id) {
 
         const result = await response.json();
         alert(result.message);
-        loadEmployees();
+        await loadEmployees();
 
     }
     catch (error) {
