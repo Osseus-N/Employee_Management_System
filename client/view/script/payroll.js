@@ -1,7 +1,3 @@
-// ===============================
-// PAYROLL MODULE
-// ===============================
-
 const payrollAPI = "../../../server/payroll/payrollController.php";
 
 let payrolls = [];
@@ -32,39 +28,27 @@ function bindPayrollEvents() {
 async function loadPayroll() {
 
     try {
-
         const response = await fetch(payrollAPI);
-
         const result = await response.json();
 
         if (!result.success) {
-
             payrolls = [];
-
             renderPayroll([]);
-
             return;
 
         }
-
         payrolls = result.data;
-
         renderPayroll(payrolls);
 
     }
-
     catch (error) {
-
         console.error(error);
-
     }
 
 }
 
 function renderPayroll(data) {
-
     const table = document.getElementById("payrollTableBody");
-
     table.innerHTML = "";
 
     if (!data.length) {
@@ -126,17 +110,13 @@ function searchPayroll() {
 }
 
 function filterPayroll() {
-
     const month = document.getElementById("payrollPeriodFilter").value;
 
     if (!month) {
-
         renderPayroll(payrolls);
-
         return;
 
     }
-
     renderPayroll(
         payrolls.filter(payroll =>
             payroll.pay_period_start.startsWith(month)
@@ -150,25 +130,16 @@ async function generatePayroll() {
     if (!confirm("Generate payroll?")) return;
 
     try {
-
         const response = await fetch(payrollAPI, {
-
             method: "POST"
-
         });
-
         const result = await response.json();
-
         alert(result.message);
-
         loadPayroll();
-
     }
-
     catch (error) {
 
         console.error(error);
-
     }
 
 }
@@ -176,31 +147,22 @@ async function generatePayroll() {
 async function payEmployee(id) {
 
     try {
-
         const response = await fetch(payrollAPI, {
-
             method: "PUT",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 pay_id: id
             })
 
         });
-
         const result = await response.json();
-
         alert(result.message);
-
         loadPayroll();
 
     }
-
     catch (error) {
-
         console.error(error);
 
     }
@@ -208,11 +170,9 @@ async function payEmployee(id) {
 }
 
 document.addEventListener("click", event => {
-
     const button = event.target.closest(".btn-pay");
 
     if (!button) return;
-
     payEmployee(button.dataset.id);
 
 });

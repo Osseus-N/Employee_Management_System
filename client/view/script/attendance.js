@@ -1,9 +1,4 @@
-// ===============================
-// ATTENDANCE MODULE
-// ===============================
-
 const attendanceAPI = "../../../server/attendance/attendanceController.php";
-
 let attendances = [];
 
 document.addEventListener("DOMContentLoaded", initializeAttendance);
@@ -35,23 +30,14 @@ async function loadAttendance() {
         const result = await response.json();
 
         if (!result.success) {
-
             attendances = [];
-
             renderAttendance([]);
-
             return;
-
         }
-
         attendances = result.data;
-
         renderAttendance(attendances);
-
     }
-
     catch (error) {
-
         console.error(error);
 
     }
@@ -59,13 +45,10 @@ async function loadAttendance() {
 }
 
 function renderAttendance(data) {
-
     const table = document.getElementById("attendanceTableBody");
-
     table.innerHTML = "";
 
     if (!data.length) {
-
         table.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center py-6">
@@ -73,7 +56,6 @@ function renderAttendance(data) {
                 </td>
             </tr>
         `;
-
         return;
 
     }
@@ -111,23 +93,17 @@ function searchAttendance() {
             .toLowerCase()
             .includes(keyword)
     );
-
     renderAttendance(filtered);
-
 }
 
 function filterAttendance() {
-
     const date = document.getElementById("attendanceDateFilter").value;
 
     if (!date) {
-
         renderAttendance(attendances);
-
         return;
 
     }
-
     renderAttendance(
         attendances.filter(record => record.att_date === date)
     );

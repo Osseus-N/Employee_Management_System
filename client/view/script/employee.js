@@ -1,18 +1,11 @@
-// ===============================
-// EMPLOYEE MODULE
-// ===============================
-
 const employeeAPI = "../../../server/employee/employeeController.php";
-
 let employees = [];
 let selectedEmployee = null;
 
 document.addEventListener("DOMContentLoaded", initializeEmployee);
 
 function initializeEmployee() {
-
     bindEmployeeEvents();
-
     loadEmployees();
 
 }
@@ -41,37 +34,26 @@ function bindEmployeeEvents() {
 async function loadEmployees() {
 
     try {
-
         const response = await fetch(employeeAPI);
-
         const result = await response.json();
 
         if (!result.success) {
-
             employees = [];
-
             renderEmployees([]);
-
             return;
 
         }
-
         employees = result.data;
-
         renderEmployees(employees);
-
     }
 
     catch (error) {
-
         console.error(error);
-
     }
 
 }
 
 function renderEmployees(data) {
-
     const table = document.getElementById("employeeTableBody");
 
     table.innerHTML = "";
@@ -89,9 +71,7 @@ function renderEmployees(data) {
         return;
 
     }
-
     data.forEach(employee => {
-
         table.insertAdjacentHTML("beforeend", createEmployeeRow(employee));
 
     });
@@ -141,9 +121,7 @@ function createEmployeeRow(emp) {
 }
 
 function searchEmployee() {
-
     const keyword = document.getElementById("searchEmployee").value.toLowerCase();
-
     const filtered = employees.filter(emp =>
         emp.emp_firstname.toLowerCase().includes(keyword) ||
         emp.emp_lastname.toLowerCase().includes(keyword) ||
@@ -155,14 +133,12 @@ function searchEmployee() {
 }
 
 function filterEmployees() {
-
     const status = document.getElementById("statusFilter").value;
 
     if (!status) {
         renderEmployees(employees);
         return;
     }
-
     renderEmployees(
         employees.filter(emp => emp.emp_status === status)
     );
@@ -204,11 +180,9 @@ function closeEmployeeModal() {
 }
 
 function selectEmployee(id) {
-
     selectedEmployee = employees.find(emp => emp.emp_id == id);
 
     if (!selectedEmployee) return;
-
     firstName.value = selectedEmployee.emp_firstname;
     lastName.value = selectedEmployee.emp_lastname;
     dob.value = selectedEmployee.emp_date_of_birth;
@@ -249,7 +223,6 @@ async function saveEmployee(event) {
 }
 
 function getEmployeeData() {
-
     return {
 
         emp_firstname: firstName.value.trim(),
@@ -270,11 +243,8 @@ function getEmployeeData() {
 function clearForm() {
 
     selectedEmployee = null;
-
     employeeForm.reset();
-
     male.checked = true;
-
     status.value = "Active";
 
 }
@@ -282,77 +252,50 @@ function clearForm() {
 async function addEmployee() {
 
     try {
-
         const response = await fetch(employeeAPI, {
-
             method: "POST",
-
             headers: {
-
                 "Content-Type": "application/json"
-
             },
-
             body: JSON.stringify(getEmployeeData())
 
         });
 
         const result = await response.json();
-
         alert(result.message);
-
         closeEmployeeModal();
-
         loadEmployees();
 
     }
-
     catch (error) {
-
         console.error(error);
-
     }
 
 }
 
 async function updateEmployee() {
-
     try {
-
         const response = await fetch(employeeAPI, {
-
             method: "PUT",
-
             headers: {
-
                 "Content-Type": "application/json"
-
             },
-
             body: JSON.stringify({
 
                 emp_id: selectedEmployee.emp_id,
 
                 ...getEmployeeData()
-
             })
-
         });
 
         const result = await response.json();
-
         alert(result.message);
-
         closeEmployeeModal();
-
         loadEmployees();
 
     }
-
     catch (error) {
-
         console.error(error);
-
     }
 
 }
@@ -362,57 +305,35 @@ async function deleteEmployee(id) {
     if (!confirm("Delete this employee?")) return;
 
     try {
-
         const response = await fetch(employeeAPI, {
-
             method: "DELETE",
-
             headers: {
-
                 "Content-Type": "application/json"
-
             },
-
             body: JSON.stringify({
-
                 emp_id: id
-
             })
-
         });
 
         const result = await response.json();
-
         alert(result.message);
-
         loadEmployees();
 
     }
-
     catch (error) {
-
         console.error(error);
-
     }
-
 }
 
 document.addEventListener("click", event => {
-
     const edit = event.target.closest(".btn-edit");
 
     if (edit) {
-
         selectEmployee(edit.dataset.id);
-
         return;
-
     }
-
     const del = event.target.closest(".btn-delete");
-
     if (del) {
-
         deleteEmployee(del.dataset.id);
 
     }

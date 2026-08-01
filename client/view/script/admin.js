@@ -1,9 +1,12 @@
 document.addEventListener("DOMContentLoaded", initializeDashboard);
 
 function initializeDashboard() {
+
     updateCurrentDate();
     bindDashboardEvents();
+    showSection("employee");
     refreshDashboard();
+
 }
 
 function bindDashboardEvents() {
@@ -17,34 +20,32 @@ function bindDashboardEvents() {
     document.getElementById("btnProfile")
         ?.addEventListener("click", openProfile);
 
+    document.getElementById("tabEmployees")
+        ?.addEventListener("click", () => showSection("employee"));
+
+    document.getElementById("tabAttendance")
+        ?.addEventListener("click", () => showSection("attendance"));
+
+    document.getElementById("tabPayroll")
+        ?.addEventListener("click", () => showSection("payroll"));
+
 }
 
 function updateCurrentDate() {
+
     const currentDate = document.getElementById("currentDate");
 
     if (!currentDate) return;
 
     currentDate.textContent = new Date().toLocaleDateString("en-PH", {
+
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric"
+
     });
-}
 
-function updateDashboardCards() {
-
-    document.getElementById("totalEmployees").textContent =
-        employees.length;
-
-    document.getElementById("activeEmployees").textContent =
-        employees.filter(emp => emp.emp_status === "Active").length;
-
-    document.getElementById("inactiveEmployees").textContent =
-        employees.filter(emp => emp.emp_status === "Inactive").length;
-
-    document.getElementById("terminatedEmployees").textContent =
-        employees.filter(emp => emp.emp_status === "Terminated").length;
 }
 
 async function refreshDashboard() {
@@ -53,24 +54,61 @@ async function refreshDashboard() {
     await loadAttendance();
     await loadPayroll();
 
-    updateDashboard();
 }
 
 async function logout() {
 
-    if (!confirm("Are you sure you want to logout?")) return;
+    if (!confirm("Are you sure wanna logout zir?")) return;
+
     try {
+
         await fetch("../../server/login/loginController.php", {
+
             method: "DELETE"
+
         });
+
     } catch (error) {
+
         console.error(error);
+
     }
+
     window.location.href = "../../login/login.html";
+
 }
 
 function openProfile() {
 
     window.location.href = "../employee/employee_view.html";
+
+}
+
+function showSection(section) {
+
+    document.getElementById("employeeSection").classList.add("hidden");
+    document.getElementById("attendanceSection").classList.add("hidden");
+    document.getElementById("payrollSection").classList.add("hidden");
+
+    document.getElementById(section + "Section").classList.remove("hidden");
+
+    setActiveTab({
+        employee: "tabEmployees",
+        attendance: "tabAttendance",
+        payroll: "tabPayroll"
+    }[section]);
+
+}
+
+function setActiveTab(activeId) {
+
+    document.querySelectorAll(".tab-btn").forEach(button => {
+
+        button.classList.remove("border-blue-600", "text-blue-600");
+
+    });
+
+    document.getElementById(activeId)
+        ?.classList.add("border-blue-600", "text-blue-600");
 
 }
