@@ -2,23 +2,51 @@
 
 namespace employee;
 
+use Database;
+
 class employeeRepository
 {
-    public function getEmployee($emp_id){
+    private Database $db;
 
-        $data = $this->db->select('employees' , "*", ['emp_id' => $emp_id]);
-        return $data->fetch_assoc();
-
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+        $this->db->connect();
     }
 
-    public function editEmployee($table, $data, $where){
+    public function getEmployee($emp_id)
+    {
+        $result = $this->db->select(
+            "employees",
+            "*",
+            ["emp_id" => $emp_id]
+        );
 
-        $data = $this->editEmployee($table, $data, $where);
+        return $result->fetch_assoc();
+    }
 
-        if ($data && $data->num_rows > 0) {
-            return $data->fetch_assoc();
-        }
+    public function createEmployee(array $data)
+    {
+        return $this->db->insert(
+            "employees",
+            $data
+        );
+    }
 
-        return null;
+    public function editEmployee(array $data, array $where)
+    {
+        return $this->db->update(
+            "employees",
+            $data,
+            $where
+        );
+    }
+
+    public function deleteEmployee($emp_id)
+    {
+        return $this->db->delete(
+            "employees",
+            ["emp_id" => $emp_id]
+        );
     }
 }

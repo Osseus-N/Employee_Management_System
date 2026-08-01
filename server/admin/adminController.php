@@ -70,10 +70,10 @@ class adminController extends responseController
         $employees = $this->adminService->getAllEmployee();
 
         if (!empty($employees)) {
-            $this->success('Employees retrieved successfully', $employees);
+            $this->success("Employees retrieved successfully", $employees);
         }
 
-        $this->success('No employees found', []);
+        $this->success("No employees found", []);
     }
 
     public function getEmployeeById($id): void
@@ -81,10 +81,10 @@ class adminController extends responseController
         $employee = $this->employeeService->getEmployee($id);
 
         if ($employee) {
-            $this->success('Employee found', $employee);
+            $this->success("Employee found", $employee);
         }
 
-        $this->error('Employee not found', 404);
+        $this->error("Employee not found.", 404);
     }
 
     public function createEmployee(array $data = []): void
@@ -103,10 +103,11 @@ class adminController extends responseController
 
         $created = $this->employeeService->createEmployee($data);
 
-        if ($created) {
-            $this->success("Employee created successfully", $created, 201);
+        if($created){
+            $this->success(
+                "Employee created successfully"
+            );
         }
-
         $this->error("Failed to create employee.", 500);
     }
     public function searchEmployee(string $searchTerm): void
@@ -122,21 +123,22 @@ class adminController extends responseController
 
     public function deleteEmployee(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
 
-        if (empty($data['emp_id'])) {
-            $this->error('Employee ID is required for deletion', 400);
+        if (empty($data["emp_id"])) {
+            $this->error("Employee ID is required.", 400);
         }
 
-        $isDeleted = $this->adminService->deleteEmployee($data['emp_id']);
+        $deleted = $this->employeeService->deleteEmployee(
+            $data["emp_id"]
+        );
 
-        if ($isDeleted) {
-            $this->success('Employee deleted successfully');
+        if ($deleted) {
+            $this->success("Employee deleted successfully");
         }
 
-        $this->error('Employee not found or could not be deleted', 404);
+        $this->error("Failed to delete employee.", 500);
     }
-
     public function payEmployee(array $data = []): void
     {
         if (empty($data['emp_id']) || empty($data['amount'])) {
@@ -155,22 +157,22 @@ class adminController extends responseController
         $this->error('Failed to process payment.', 500);
     }
 
-    public function editEmployee(): void
-    {
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+   public function editEmployee(): void
+   {
+       $data = json_decode(file_get_contents("php://input"), true) ?? [];
 
-        if (empty($data['emp_id'])) {
-            $this->error('Employee ID is required', 400);
-        }
+       if (empty($data["emp_id"])) {
+           $this->error("Employee ID is required.", 400);
+       }
 
-        $updated = $this->employeeService->editEmployee($data['emp_id'], $data);
+       $updated = $this->employeeService->editEmployee(
+           $data["emp_id"],
+           $data
+       );
 
-        if ($updated) {
-            $this->success('Employee successfully updated', [
-                'emp_id' => $data['emp_id']
-            ]);
-        }
+       if ($updated) {
+           $this->success("Employee updated successfully");
+       }
 
-        $this->error('Failed to update employee details.', 500);
-    }
-}
+       $this->error("Failed to update employee.", 500);
+   }
