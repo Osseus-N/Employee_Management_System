@@ -1,790 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>
-        Admin Dashboard
-    </title>
-
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="../script/login/validation.js"></script>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <script src="../script/admin.js" defer></script>
-
+    <link rel="stylesheet" href="../../style/style.css">
 </head>
 
 <body class="bg-slate-100">
 
-<!-- ================= HEADER ================= -->
+<header class="bg-slate-800 text-white shadow">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
 
-<header class="bg-slate-800 shadow-lg">
+        <div>
+            <h1 class="text-2xl font-bold">Payroll & Employee Management System</h1>
+            <p id="currentDate" class="text-sm text-slate-300"></p>
+        </div>
 
-    <div class="max-w-7xl mx-auto px-6 py-5">
+        <div class="flex gap-3">
 
-        <div class="flex items-center justify-between">
+            <button id="btnRefresh"
+                    class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+            </button>
 
-            <!-- Title -->
+            <button id="btnProfile"
+                    class="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">
+                <i class="bi bi-person-circle"></i>
+                My Profile
+            </button>
 
-            <div>
-
-                <h1 class="text-3xl font-bold text-white">
-
-                    Payroll & Employee Management
-
-                </h1>
-
-                <p class="text-slate-300">
-
-                    Administrator Dashboard
-
-                </p>
-
-            </div>
-
-            <!-- Right -->
-
-            <div class="flex items-center gap-4">
-
-                <!-- Search -->
-
-                <div class="relative">
-
-                    <svg
-                            class="absolute left-3 top-3 w-5 h-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            viewBox="0 0 24 24">
-
-                        <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M21 21l-5.2-5.2M10 18a8 8 0 100-16 8 8 0 000 16z"/>
-
-                    </svg>
-
-                    <input
-
-                            id="searchInput"
-
-                            type="text"
-
-                            placeholder="Search employee..."
-
-                            class="w-72 rounded-xl border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-blue-500">
-
-                </div>
-
-                <!-- Profile -->
-
-                <a
-
-                        href="../employee/employee_view.html"
-
-                        class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl font-medium transition">
-
-                    My Profile
-
-                </a>
-
-                <!-- Create -->
-
-                <button
-
-                        id="toggleEmployeeForm"
-
-                        class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-medium transition">
-
-                    Create Employee
-
-                </button>
-
-            </div>
+            <button id="btnLogout"
+                    class="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
 
         </div>
 
     </div>
-
 </header>
-
-<!-- ================= MAIN ================= -->
 
 <main class="max-w-7xl mx-auto p-6">
 
-    <!-- ================= CREATE EMPLOYEE ================= -->
+    <div class="bg-white rounded-lg shadow">
 
-    <div
+        <div class="flex border-b">
 
-            id="createEmployeeForm"
+            <button id="tabEmployees"
+                    class="tab-btn flex-1 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">
+                <i class="bi bi-people"></i>
+                Employees
+            </button>
 
-            class="hidden bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <button id="tabAttendance"
+                    class="tab-btn flex-1 py-3 font-semibold hover:bg-slate-100">
+                <i class="bi bi-calendar-check"></i>
+                Attendance
+            </button>
 
-        <h2
+            <button id="tabPayroll"
+                    class="tab-btn flex-1 py-3 font-semibold hover:bg-slate-100">
+                <i class="bi bi-cash-stack"></i>
+                Payroll
+            </button>
 
-                class="text-2xl font-bold text-slate-700 mb-6">
+        </div>
 
-            Create New Employee
+        <div class="p-6">
+            <!-- Employee Section -->
+            <section id="employeeSection">
 
-        </h2>
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-5">
 
-        <form id="employeeForm">
+                    <div class="flex gap-2">
+                        <button id="btnAddEmployee" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="bi bi-person-plus"></i> Add Employee
+                        </button>
+                    </div>
 
-            <div
+                    <div class="flex gap-2">
+                        <input id="searchEmployee" type="text" placeholder="Search employee..." class="border rounded-lg px-4 py-2 w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
 
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- First Name -->
-                <div>
-                    <label for="firstName"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        First Name
-                    </label>
+                        <select id="statusFilter" class="border rounded-lg px-4 py-2 focus:outline-none">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Terminated">Terminated</option>
+                        </select>
+                    </div>
 
-                    <input
-                            id="firstName"
-                            type="text"
-                            placeholder="Juan"
-                            required
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- Last Name -->
-                <div>
-                    <label for="lastName"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name
-                    </label>
+                <div class="overflow-x-auto border rounded-lg">
 
-                    <input
-                            id="lastName"
-                            type="text"
-                            placeholder="Dela Cruz"
-                            required
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <table class="w-full text-sm">
+
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="p-3 w-16">
+                                <label for="selectAll" class="sr-only">Select All Employees</label>
+                                <input id="selectAll" type="checkbox">
+                            </th>
+                            <th class="p-3">ID</th>
+                            <th class="p-3">First Name</th>
+                            <th class="p-3">Last Name</th>
+                            <th class="p-3">Gender</th>
+                            <th class="p-3">Birthday</th>
+                            <th class="p-3">Contact</th>
+                            <th class="p-3">Position</th>
+                            <th class="p-3">Rate</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="employeeTableBody">
+                        <tr>
+                            <td colspan="11" class="text-center p-6 text-gray-500">
+                                No employee records.
+                            </td>
+                        </tr>
+                        </tbody>
+
+                    </table>
+
                 </div>
 
-                <!-- Date of Birth -->
-                <div>
-                    <label for="dob"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        Date of Birth
-                    </label>
+            </section>
 
-                    <input
-                            id="dob"
-                            type="date"
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Employee Modal -->
+
+            <div id="employeeModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+
+                <div class="bg-white rounded-xl w-full max-w-3xl p-6">
+
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 id="employeeModalTitle" class="text-xl font-bold">Employee Information</h2>
+
+                        <button id="btnCloseModal" class="text-2xl hover:text-red-600">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <form id="employeeForm" class="grid grid-cols-2 gap-4">
+
+                        <input id="firstName" type="text" placeholder="First Name" class="border rounded-lg p-2">
+
+                        <input id="lastName" type="text" placeholder="Last Name" class="border rounded-lg p-2">
+
+                        <input id="dob" type="date" class="border rounded-lg p-2">
+
+                        <input id="contactNumber" type="text" placeholder="Contact Number" class="border rounded-lg p-2">
+
+                        <input id="position" type="text" placeholder="Position" class="border rounded-lg p-2">
+
+                        <input id="hourlyRate" type="number" step="0.01" placeholder="Hourly Rate" class="border rounded-lg p-2">
+
+                        <select id="status" class="border rounded-lg p-2">
+                            <option>Active</option>
+                            <option>Inactive</option>
+                            <option>Terminated</option>
+                        </select>
+
+                        <div>
+                            <p class="mb-2 font-medium">Gender</p>
+
+                            <label class="mr-4"><input id="male" type="radio" name="gender" value="Male" checked> Male</label>
+
+                            <label class="mr-4"><input id="female" type="radio" name="gender" value="Female"> Female</label>
+
+                            <label><input id="other" type="radio" name="gender" value="Other"> Other</label>
+                        </div>
+
+                        <div class="col-span-2 flex justify-end gap-2 mt-3">
+
+                            <button type="button" id="btnCancel" class="px-5 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+                                Cancel
+                            </button>
+
+                            <button type="submit" id="btnSave" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Save
+                            </button>
+
+                        </div>
+
+                    </form>
+
                 </div>
 
-                <!-- Email -->
-                <div>
-                    <label for="email"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                    </label>
+            </div>
 
-                    <input
-                            id="email"
-                            type="email"
-                            placeholder="employee@email.com"
-                            required
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Attendance Section -->
+            <section id="attendanceSection" class="hidden">
+                <!-- Attendance -->
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-5">
+
+                    <div class="flex gap-2">
+                        <button id="btnRefreshAttendance" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input id="attendanceSearch" type="text" placeholder="Search employee..." class="border rounded-lg px-4 py-2 w-72">
+                        <input id="attendanceDateFilter" type="date" class="border rounded-lg px-4 py-2">
+                    </div>
+
                 </div>
 
-                <!-- Gender -->
-                <div>
+                <div class="overflow-x-auto border rounded-lg">
 
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Gender
-                    </label>
+                    <table class="w-full text-sm">
 
-                    <div class="flex items-center gap-6 mt-3">
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Employee</th>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Time In</th>
+                            <th class="p-3">Time Out</th>
+                            <th class="p-3">Hours</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                        </thead>
 
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <tbody id="attendanceTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center p-6 text-gray-500">No attendance records.</td>
+                        </tr>
+                        </tbody>
 
-                            <input
-                                    type="radio"
-                                    name="gender"
-                                    value="Male"
-                                    checked
-                                    class="w-4 h-4 text-blue-600">
+                    </table>
 
-                            <span>Male</span>
+                </div>
 
-                        </label>
+            </section>
 
-                        <label class="flex items-center gap-2 cursor-pointer">
+            <!-- Payroll Section -->
+            <section id="payrollSection" class="hidden">
 
-                            <input
-                                    type="radio"
-                                    name="gender"
-                                    value="Female"
-                                    class="w-4 h-4 text-pink-600">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-5">
 
-                            <span>Female</span>
+                    <div class="flex gap-2">
 
-                        </label>
+                        <button id="btnGeneratePayroll" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="bi bi-cash-stack"></i> Generate
+                        </button>
+
+                        <button id="btnRefreshPayroll" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+
+                    </div>
+
+                    <div class="flex gap-2">
+
+                        <input id="payrollSearch" type="text" placeholder="Search employee..." class="border rounded-lg px-4 py-2 w-72">
+
+                        <input id="payrollPeriodFilter" type="month" class="border rounded-lg px-4 py-2">
 
                     </div>
 
                 </div>
 
-                <!-- Position -->
-                <div>
+                <div class="overflow-x-auto border rounded-lg">
 
-                    <label for="position"
-                           class="block text-sm font-medium text-gray-700 mb-2">
+                    <table class="w-full text-sm">
 
-                        Position
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="p-3">Payroll ID</th>
+                            <th class="p-3">Employee</th>
+                            <th class="p-3">Period</th>
+                            <th class="p-3">Gross Pay</th>
+                            <th class="p-3">Net Pay</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                        </thead>
 
-                    </label>
+                        <tbody id="payrollTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center p-6 text-gray-500">No payroll records.</td>
+                        </tr>
+                        </tbody>
 
-                    <select
-
-                            id="position"
-
-                            required
-
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
-
-                        <option value="">
-                            Select Position
-                        </option>
-
-                        <option value="Admin">
-                            Admin
-                        </option>
-
-                        <option value="Employee">
-                            Employee
-                        </option>
-
-                    </select>
+                    </table>
 
                 </div>
 
-                <!-- Hourly Rate -->
-                <div>
+            </section>
 
-                    <label for="hourlyRate"
-                           class="block text-sm font-medium text-gray-700 mb-2">
+            <!-- Delete Modal -->
+            <div id="deleteModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
 
-                        Hourly Rate
+                <div class="bg-white rounded-xl p-6 w-full max-w-sm">
 
-                    </label>
+                    <h2 class="text-xl font-bold mb-3">Delete Employee</h2>
 
-                    <input
+                    <p class="text-gray-600 mb-6">Are you sure you want to delete this employee?</p>
 
-                            id="hourlyRate"
+                    <div class="flex justify-end gap-2">
 
-                            type="number"
-
-                            step="0.01"
-
-                            placeholder="150"
-
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
-
-                </div>
-
-                <!-- Address -->
-                <div>
-
-                    <label for="address"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-
-                        Address
-
-                    </label>
-
-                    <input
-
-                            id="address"
-
-                            type="text"
-
-                            placeholder="Nueva Ecija"
-
-                            class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
-
-                </div>
-
-            </div>
-
-            <!-- Buttons -->
-
-            <div class="mt-8 flex gap-4">
-
-                <button
-
-                        type="submit"
-
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition">
-
-                    Save Employee
-
-                </button>
-
-                <button
-
-                        type="reset"
-
-                        class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-semibold transition">
-
-                    Clear
-
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-    <!-- ================= EMPLOYEE TABLE ================= -->
-
-    <div class="bg-white rounded-2xl shadow-xl p-6">
-        <!-- ================= TABLE HEADER ================= -->
-
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-
-            <div>
-
-                <h2 class="text-2xl font-bold text-slate-700">
-
-                    Employee List
-
-                </h2>
-
-                <p class="text-gray-500">
-
-                    Manage employee records
-
-                </p>
-
-            </div>
-
-            <div class="flex items-center gap-3">
-
-                <!-- Filter -->
-
-                <input
-
-                        id="filterInput"
-
-                        type="text"
-
-                        placeholder="Filter employees..."
-
-                        class="w-64 rounded-xl border border-gray-300 bg-gray-50 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-
-                <!-- Delete -->
-
-                <button
-
-                        id="deleteSelectedBtn"
-
-                        class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl transition">
-
-                    Delete Selected
-
-                </button>
-
-            </div>
-
-        </div>
-
-        <!-- ================= TABLE ================= -->
-
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-
-            <table class="min-w-full divide-y divide-gray-200">
-
-                <thead class="bg-slate-800 text-white">
-
-                <tr>
-
-                    <th class="px-4 py-4 text-center">
-
-                        <input
-                                id="selectAll"
-                                type="checkbox"
-                                class="h-4 w-4 rounded">
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        First Name
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Last Name
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Birth Date
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Email
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Gender
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Position
-
-                    </th>
-
-                    <th class="px-4 py-4 text-left">
-
-                        Hourly Rate
-
-                    </th>
-
-                    <th class="px-4 py-4 text-center">
-
-                        Payroll
-
-                    </th>
-
-                    <th class="px-4 py-4 text-center">
-
-                        Edit
-
-                    </th>
-
-                    <th class="px-4 py-4 text-center">
-
-                        Delete
-
-                    </th>
-
-                </tr>
-
-                </thead>
-
-                <tbody
-
-                        id="employeeTableBody"
-
-                        class="divide-y divide-gray-200 bg-white">
-
-                <!-- Employee rows added by admin.js -->
-
-                <!-- SAMPLE ROW -->
-
-                <tr class="hover:bg-slate-50 transition">
-
-                    <td class="px-4 py-3 text-center">
-
-                        <input type="checkbox">
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        Juan
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        Dela Cruz
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        2002-04-15
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        juan@gmail.com
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        Male
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        Employee
-
-                    </td>
-
-                    <td class="px-4 py-3">
-
-                        ₱120.00
-
-                    </td>
-
-                    <td class="px-4 py-3 text-center">
-
-                        <button
-
-                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
-
-                            Payroll
-
+                        <button id="btnDeleteCancel" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+                            Cancel
                         </button>
 
-                    </td>
-
-                    <td class="px-4 py-3 text-center">
-
-                        <button
-
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-
-                            Edit
-
-                        </button>
-
-                    </td>
-
-                    <td class="px-4 py-3 text-center">
-
-                        <button
-
-                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
-
+                        <button id="btnDeleteConfirm" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                             Delete
-
                         </button>
 
-                    </td>
+                    </div>
 
-                </tr>
+                </div>
 
-                </tbody>
-
-            </table>
+            </div>
 
         </div>
-
-    </div>
 
 </main>
-<!-- ================= MODAL ================= -->
 
-<div
-        id="adminActionModal"
-        class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
-
-        <!-- Header -->
-
-        <div class="flex items-center justify-between border-b px-6 py-4">
-
-            <h2
-                    id="adminActionModalLabel"
-                    class="text-xl font-bold text-slate-700">
-
-                Employee Action
-
-            </h2>
-
-            <button
-                    id="closeModal"
-
-                    class="text-3xl text-gray-500 hover:text-red-600">
-
-                &times;
-
-            </button>
-
-        </div>
-
-        <!-- Body -->
-
-        <form id="adminActionForm">
-
-            <div
-                    id="adminModalBody"
-                    class="p-6 space-y-4">
-
-                <!-- Dynamic content inserted by admin.js -->
-
-            </div>
-
-            <!-- Footer -->
-
-            <div
-                    class="flex justify-end gap-3 border-t px-6 py-4">
-
-                <button
-
-                        type="button"
-
-                        id="cancelModal"
-
-                        class="px-6 py-2 rounded-lg bg-gray-400 hover:bg-gray-500 text-white">
-
-                    Cancel
-
-                </button>
-
-                <button
-
-                        type="submit"
-
-                        id="modalSubmitBtn"
-
-                        class="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
-
-                    Save
-
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ================= JAVASCRIPT ================= -->
-
-<script>
-
-    /* Toggle Create Employee Form */
-
-    const toggleBtn =
-        document.getElementById("toggleEmployeeForm");
-
-    const employeeForm =
-        document.getElementById("createEmployeeForm");
-
-    toggleBtn.addEventListener("click",()=>{
-
-        employeeForm.classList.toggle("hidden");
-
-    });
-
-
-    /* Modal */
-
-    const modal =
-        document.getElementById("adminActionModal");
-
-    const closeModal =
-        document.getElementById("closeModal");
-
-    const cancelModal =
-        document.getElementById("cancelModal");
-
-
-    function openModal(){
-
-        modal.classList.remove("hidden");
-
-        modal.classList.add("flex");
-
-    }
-
-
-    function closeAdminModal(){
-
-        modal.classList.remove("flex");
-
-        modal.classList.add("hidden");
-
-    }
-
-
-    closeModal.onclick = closeAdminModal;
-
-    cancelModal.onclick = closeAdminModal;
-
-
-    modal.addEventListener("click",function(e){
-
-        if(e.target===modal){
-
-            closeAdminModal();
-
-        }
-
-    });
-
-
-    /* Select All */
-
-    const selectAll =
-        document.getElementById("selectAll");
-
-    if(selectAll){
-
-        selectAll.addEventListener("change",function(){
-
-            document
-                .querySelectorAll("#employeeTableBody input[type='checkbox']")
-                .forEach(box=>{
-
-                    box.checked=this.checked;
-
-                });
-
-        });
-
-    }
-
-
-    /* Filter */
-
-    const filterInput =
-        document.getElementById("filterInput");
-
-    if(filterInput){
-
-        filterInput.addEventListener("keyup",function(){
-
-            let value=this.value.toLowerCase();
-
-            document.querySelectorAll("#employeeTableBody tr").forEach(row=>{
-
-                row.style.display =
-                    row.innerText.toLowerCase().includes(value)
-                        ? ""
-                        : "none";
-
-            });
-
-        });
-
-    }
-
-</script>
+<!-- Scripts -->
+<script src="../../script/login/authen.js"></script>
+<script src="../../script/login/validation.js"></script>
+
+<script src="../../script/api.js"></script>
+<script src="../../script/utils.js"></script>
+<script src="../../script/modal.js"></script>
+
+<script src="../../script/employee.js"></script>
+<script src="../../script/attendance.js"></script>
+<script src="../../script/payroll.js"></script>
+<script src="../../script/admin.js"></script>
 
 </body>
-
 </html>

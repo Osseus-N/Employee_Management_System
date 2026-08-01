@@ -1,22 +1,27 @@
 //ONLY FOR TEST(Hindi mismong code)
-alert("AUTH.JS LOADED");
-
 document.addEventListener("DOMContentLoaded", function () {
-    alert("DOM READY");
+        checkUserRole();
+    });
 
-    const loginForm = document.getElementById("loginForm");
-    console.log(loginForm);
+    function checkUserRole() {
 
-    if (!loginForm) {
-        alert("FORM NOT FOUND");
-        return;
+        const userRole =
+            sessionStorage.getItem("role") ||
+            localStorage.getItem("role");
+
+        const adminBtn =
+            document.getElementById("adminReturnBtn");
+
+        if (
+            userRole &&
+            userRole.toLowerCase() === "admin"
+        ) {
+
+            adminBtn.classList.remove("d-none");
+
+        }
+
     }
-
-    alert("FORM FOUND");
-
-    // Pass the event directly to the standalone function
-    loginForm.addEventListener("submit", login);
-});
 //TULOY KO BUKAS(ERROR)
 async function login(event) {
 

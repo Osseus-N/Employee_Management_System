@@ -1,50 +1,135 @@
-async function loadAttendanceHeatmap(empId, containerId = "attendanceHeatmap") {
+// ===============================
+// ATTENDANCE MODULE
+// ===============================
+
+const attendanceAPI = "../../../server/attendance/attendanceController.php";
+
+let attendances = [];
+
+document.addEventListener("DOMContentLoaded", initializeAttendance);
+
+function initializeAttendance() {
+    bindAttendanceEvents();
+    loadAttendance();
+}
+
+function bindAttendanceEvents() {
+
+    document.getElementById("btnRefreshAttendance")
+        ?.addEventListener("click", loadAttendance);
+
+    document.getElementById("attendanceSearch")
+        ?.addEventListener("input", searchAttendance);
+
+    document.getElementById("attendanceDateFilter")
+        ?.addEventListener("change", filterAttendance);
+
+}
+
+async function loadAttendance() {
+
     try {
-        const response = await fetch(`../../server/attendance/attendanceController.php?action=getEmployeeAttendance&emp_id=${empId}`);
+
+        const response = await fetch(attendanceAPI);
+
         const result = await response.json();
 
-        if (!result.success || !result.data || result.data.length === 0) {
-            document.getElementById(containerId).innerHTML = "<p class='text-muted'>No attendance records found.</p>";
+        if (!result.success) {
+
+            attendances = [];
+
+            renderAttendance([]);
+
             return;
+
         }
 
-        const attendanceList = result.data;
+        attendances = result.data;
 
-        const attendanceMap = {};
-        const dates = [];
+        renderAttendance(attendances);
 
-        attendanceList.forEach(item => {
-            attendanceMap[item.date] = item.status.toLowerCase();
-            dates.push(new Date(item.date));
-        });
-
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-
-        const gridContainer = document.getElementById(containerId);
-        gridContainer.innerHTML = ""; // Clear existing contents
-
-        let currentDate = new Date(minDate);
-
-        while (currentDate <= maxDate) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const status = attendanceMap[dateStr] || "no-record";
-
-            // Create individual square/box
-            const box = document.createElement("div");
-            box.className = `attendance-box status-${status}`;
-
-            box.title = `${dateStr}: ${status.toUpperCase()}`;
-
-            gridContainer.appendChild(box);
-
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-    } catch (error) {
-        console.error("Error loading attendance heatmap:", error);
-        document.getElementById(containerId).innerHTML = "<p class='text-danger'>Failed to load attendance grid.</p>";
     }
 
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+function renderAttendance(data) {
+
+    const table = document.getElementById("attendanceTableBody");
+
+    table.innerHTML = "";
+
+    if (!data.length) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-6">
+                    No attendance records found.
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+    data.forEach(record =>
+        table.insertAdjacentHTML("beforeend", createAttendanceRow(record))
+    );
+
+}
+
+function createAttendanceRow(record) {
+
+    return `
+    <tr class="border-b hover:bg-slate-50">
+        <td class="p-3">${record.att_id}</td>
+        <td class="p-3">${record.emp_firstname} ${record.emp_lastname}</td>
+        <td class="p-3">${record.att_date}</td>
+        <td class="p-3">${record.time_in ?? "-"}</td>
+        <td class="p-3">${record.time_out ?? "-"}</td>
+        <td class="p-3">${record.hours_worked ?? 0}</td>
+        <td class="p-3">${record.att_status}</td>
+    </tr>
+    `;
+
+}
+
+function searchAttendance() {
+
+    const keyword = document.getElementById("attendanceSearch")
+        .value
+        .toLowerCase();
+
+    const filtered = attendances.filter(record =>
+        `${record.emp_firstname} ${record.emp_lastname}`
+            .toLowerCase()
+            .includes(keyword)
+    );
+
+    renderAttendance(filtered);
+
+}
+
+function filterAttendance() {
+
+    const date = document.getElementById("attendanceDateFilter").value;
+
+    if (!date) {
+
+        renderAttendance(attendances);
+
+        return;
+
+    }
+
+    renderAttendance(
+        attendances.filter(record => record.att_date === date)
+    );
 
 }
