@@ -3,9 +3,10 @@
 namespace employee;
 
 use http\Encoding\Stream\Debrotli;
+use response\responseController;
 use service\SessionManager;
 
-class employeeController
+class employeeController extends responseController
 {
     private $service;
     public function __construct(employeeService $service){
@@ -16,7 +17,9 @@ class employeeController
 
         SessionManager::init();
 
-        switch($_SERVER["REQUEST_METHOD"]){
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        switch($method){
             case "GET":
                 $this->handleEmployees();
                 break;
@@ -34,21 +37,8 @@ class employeeController
 
         $user = $this->service->getEmployee($emp_id);
 
-        if($user){
-            echo json_encode([
-                "success" => true,
-                "message" => "Logged in successfully",
-                "data" => $user
-            ]);
-        }
-        else{
-            http_response_code(404);
-            echo json_encode([
-                "success" => false,
-                "message" => "Employee not found",
-            ]);
-        }
-        exit;
+        ($user) ? $this->success("Logged in Successfully", $user)
+            : $this->error("Employee not found" , 404);
     }
 
     public function handleUpdate(){
@@ -61,19 +51,9 @@ class employeeController
 
         $user = $this->service->editEmployee($emp_id, $data);
 
-        if($user){
-            echo json_encode([
-                "success" => true,
-                "message" => "Employee updated successfully",
-                "data" => $user
-            ]);
-        }else{
-            http_response_code(404);
-            echo json_encode([
-                "success" => false,
-                "message" => "Employee not found",
-            ]);
-        }
+        ($user) ? $this->success("Employee updated successfully", $user)
+                : $this->error("Employee not found", 404);
+
         exit;
     }
 

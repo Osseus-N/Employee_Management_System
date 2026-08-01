@@ -26,12 +26,23 @@ public function getMonthlyAttendance($emp_id, $year, $month){
      $stmt->bind_param("ssi", $emp_id, $year, $month);
      $stmt->execute();
 
-    $result = $stmt->fetch(MYSQLI_ASSOC);
-    return $result ?: null;
+     $result = $stmt->get_result();
+
+    $attendanceList = $result->fetch_all(MYSQLI_ASSOC);
+    return !empty($attendanceList) ? $attendanceList : null;
 }
+
     public function insertAttendance($emp_id, $date, $status): bool{
 
-     return $this->db->insert('attendance', [$emp_id, $date, $status]);
+     try {
+         return $this->db->insert('attendance', [
+             'emp_id' => $emp_id,
+             'att_work_date' => $date,
+             'att_status' => $status]);
+     }catch(\Exception $e){
+         $this->conn->rollback();
+         return false;
+     }
  }
 
  public function presentDays($emp_id, $year, $month){
@@ -50,8 +61,26 @@ public function getMonthlyAttendance($emp_id, $year, $month){
          return (int)($result['total_present'] ?? 0);
      }
 
-    public function checkAttendance($emp_id,$att_work_date): bool{
+    private function getUnpaidDateBoundary($emp_id, $aggregate) {
+        $result = $this->db->select(
+            'payroll',
+            "$aggregate(pay_date) as boundary_date",
+            ['emp_id' => $emp_id, 'status' => 'unpaid']
+        );
 
-     return $this->db->select('attendance', '', ['emp_id' => $emp_id]);
- }
+        if (!$result) {
+            return null;
+        }
+
+        $row = $result->fetch_assoc();
+        return $row['boundary_date'] ?? null;
+    }
+
+    public function getFirstUnpaidDate($emp_id) {
+        return $this->getUnpaidDateBoundary($emp_id, 'MIN');
+    }
+
+    public function getLastUnpaidDate($emp_id) {
+        return $this->getUnpaidDateBoundary($emp_id, 'MAX');
+    }
 }

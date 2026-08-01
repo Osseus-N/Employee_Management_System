@@ -27,9 +27,10 @@ $database = new Database();
 $adminRepo    = new \admin\adminRepository($database);
 $payrollRepo  = new \payroll\payrollRepository($database);
 $employeeRepo = new \employee\employeeRepository($database);
+$attendanceRepo = new \attendance\attendanceRepository($database);
 
 $adminService    = new \admin\adminService($adminRepo);
-$payrollService  = new \payroll\payrollService($payrollRepo);
+$payrollService  = new \payroll\payrollService($payrollRepo,$attendanceRepo);
 $employeeService = new \employee\employeeService($employeeRepo);
 
 $controller = new \admin\adminController(

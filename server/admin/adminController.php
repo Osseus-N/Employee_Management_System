@@ -94,41 +94,32 @@ class adminController extends responseController
             $this->error('Missing required fields: firstname, lastname, email.', 400);
         }
 
-        $created = $this->employeeService->createEmployee($data);
+        $created = $this->adminService->createEmployee($data);
 
-        if ($created) {
-            $this->success('Employee created successfully', $created, 201);
-        }
-
-        $this->error('Failed to create employee', 500);
+        ($created) ? $this->success('Employee created successfully', $created, 201)
+                    :$this->error('Failed to create employee', 500);
     }
 
     public function searchEmployee(string $searchTerm): void
     {
         $employees = $this->adminService->searchEmployee($searchTerm);
 
-        if (!empty($employees)) {
-            $this->success('Employees found', $employees);
-        }
-
-        $this->success('No employees matching criteria', []);
+        (!empty($employees)) ? $this->success('Employees found', $employees)
+                :$this->success('No employees matching criteria', []);
     }
 
     public function deleteEmployee(): void
     {
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        if (empty($data['emp_id'])) {
+        if ($data) {
             $this->error('Employee ID is required for deletion', 400);
         }
 
         $isDeleted = $this->adminService->deleteEmployee($data['emp_id']);
 
-        if ($isDeleted) {
-            $this->success('Employee deleted successfully');
-        }
-
-        $this->error('Employee not found or could not be deleted', 404);
+        ($isDeleted) ? $this->success('Employee deleted successfully')
+                    :$this->error('Employee not found or could not be deleted', 404);
     }
 
     public function payEmployee(array $data = []): void
@@ -139,14 +130,9 @@ class adminController extends responseController
 
         $isPaid = $this->payrollService->payEmployee($data['emp_id'], $data['amount']);
 
-        if ($isPaid) {
-            $this->success('Payment processed successfully', [
-                'emp_id' => $data['emp_id'],
-                'amount' => $data['amount']
-            ]);
-        }
-
-        $this->error('Failed to process payment.', 500);
+        ($isPaid) ? $this->success('Payment processed successfully' , ['emp_id' => $data['emp_id'],
+            'amount' => $data['amount']])
+            :$this->error('Failed to process payment.');
     }
 
     public function editEmployee(): void
@@ -157,14 +143,10 @@ class adminController extends responseController
             $this->error('Employee ID is required', 400);
         }
 
-        $updated = $this->employeeService->editEmployee($data['emp_id'], $data);
+        $updated = $this->adminService->editEmployee($data['emp_id'], $data);
 
-        if ($updated) {
-            $this->success('Employee successfully updated', [
-                'emp_id' => $data['emp_id']
-            ]);
-        }
-
-        $this->error('Failed to update employee details.', 500);
+        ($updated) ? $this->success('Employee successfully updated', [
+            'emp_id' => $data['emp_id']])
+            : $this->error('Failed to update employee detailes.');
     }
 }

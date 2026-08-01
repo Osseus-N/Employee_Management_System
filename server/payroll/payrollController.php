@@ -5,19 +5,21 @@ namespace payroll;
 use attendance\attendanceController;
 use attendance\attendanceService;
 use employee\employeeController;
+use employee\employeeService;
+use response\responseController;
 use service\SessionManager;
 
-class payrollController
+class payrollController extends responseController
 {
     private payrollService $payrollService;
-    private employeeController $employee;
+    private employeeService $employee;
     private attendanceService $attendance;
 
-    public function __construct(PayrollService $payrollService, employeeController $employeeController,
+    public function __construct(PayrollService $payrollService, employeeService $employeeService,
     attendanceService $attService){
         
     $this->payrollService = $payrollService;
-    $this->employee = $employeeController;
+    $this->employee = $employeeService;
     $this->attendance = $attService;
 
     }
@@ -34,8 +36,7 @@ class payrollController
                 $this->payEmployee();
                 break;
             default:
-                http_response_code(405);
-                echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+                $this->error('Invalid request',405);
                 break;
         }
     }
@@ -45,11 +46,11 @@ class payrollController
 
         SessionManager::isLoggedIn();
 
-        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
+        $emp_Id = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
 
-        $payroll = $this->service->getMonthlyPayroll($empId);
+        $payroll = $this->payrollService->getMonthlyPayroll($emp_Id);
 
-        echo json_encode($payroll);
+        $this->success($payroll);
     }
     private function payEmployee(){
 
@@ -58,35 +59,17 @@ class payrollController
         $data = json_decode(file_get_contents("php://input"));
 
         if (!$data || !isset($data['emp_id'])) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid or missing parameters.'
-            ]);
-            exit;
+            $this->error('Invalid request');
         }
 
         $employee = $this->employee->getEmployee($data['emp_id']);
         $presentDays = $this->attendance->presentAttendance($employee , $data['month'], $data['year']);
 
-        $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays);
+        $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays['data']);
 
-        if ($saved) {
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'message' => 'Paid Employee Successfully',
-                'data' => [
-                    'emp_id' => $data['emp_id'],
-                    'status' => $data['status']
-                ]
-            ]);
-        } else {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Database operation failed.'
-            ]);
-        }
+        ($saved) ? $this->success('Paid Employee Successfully',['data' => [
+            'emp_id' => $data['emp_id'],
+            'status' => $data['status']]])
+            :$this->error('Could not found employee', 404);
     }
 }
