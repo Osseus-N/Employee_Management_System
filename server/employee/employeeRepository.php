@@ -14,39 +14,30 @@ class employeeRepository
         $this->db->connect();
     }
 
-    public function getEmployee($emp_id)
+    public function getEmployee(int $empId): ?array
     {
         $result = $this->db->select(
             "employees",
             "*",
-            ["emp_id" => $emp_id]
+            ["emp_id" => $empId]
         );
 
-        return $result->fetch_assoc();
+        if ($result && $result->num_rows > 0) {
+            return $result->fetch_assoc();
+        }
+
+        return null;
     }
 
-    public function createEmployee(array $data)
-    {
-        return $this->db->insert(
-            "employees",
-            $data
-        );
-    }
-
-    public function editEmployee(array $data, array $where)
+    public function updateEmployee(
+        int $empId,
+        array $data
+    ): bool
     {
         return $this->db->update(
             "employees",
             $data,
-            $where
-        );
-    }
-
-    public function deleteEmployee($emp_id)
-    {
-        return $this->db->delete(
-            "employees",
-            ["emp_id" => $emp_id]
+            ["emp_id"=>$empId]
         );
     }
 }

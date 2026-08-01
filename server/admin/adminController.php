@@ -2,177 +2,194 @@
 
 namespace admin;
 
-use attendance\attendanceService;
-use employee\employeeService;
-use payroll\payrollService;
 use response\responseController;
 use service\SessionManager;
 
 class adminController extends responseController
 {
-    private $adminService;
-    private $payrollService;
-    private $employeeService;
+    private adminService $adminService;
 
-    public function __construct(
-        adminService $adminService,
-        payrollService $payrollService,
-        employeeService $employeeService
-    ) {
+    public function __construct(adminService $adminService)
+    {
         $this->adminService = $adminService;
-        $this->payrollService = $payrollService;
-        $this->employeeService = $employeeService;
     }
 
     public function handleRequest(): void
     {
         SessionManager::init();
+        SessionManager::isLoggedIn();
 
-        $method = $_SERVER['REQUEST_METHOD'];
+        switch ($_SERVER["REQUEST_METHOD"]) {
 
-        switch ($method) {
-            case 'GET':
-                if (isset($_GET['id']) && !empty($_GET['id'])) {
-                    $this->getEmployeeById($_GET['id']);
-                } else if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
-                    $this->searchEmployee($_GET['search']);
-                } else {
-                    $this->getAllEmployee();
-                }
+            case "GET":
+                $this->handleGet();
                 break;
 
-            case 'POST':
-                $data = json_decode(file_get_contents('php://input'), true) ?? [];
-
-                if (isset($data['action']) && $data['action'] === 'pay') {
-                    $this->payEmployee($data);
-                } else {
-                    $this->createEmployee($data);
-                }
+            case "POST":
+                $this->createEmployee();
                 break;
 
-            case 'PUT':
-                $this->editEmployee();
+            case "PUT":
+                $this->updateEmployee();
                 break;
 
-            case 'DELETE':
+            case "DELETE":
                 $this->deleteEmployee();
                 break;
 
             default:
-                $this->error('Method not allowed', 405);
-                break;
+                $this->error("Method Not Allowed", 405);
         }
     }
 
-    public function getAllEmployee(): void
+    /*
+    |--------------------------------------------------------------------------
+    | GET
+    |--------------------------------------------------------------------------
+    */
+
+    private function handleGet(): void
     {
-        $employees = $this->adminService->getAllEmployee();
+        // Get employee by ID
+        if (isset($_GET["emp_id"])) {
 
-        if (!empty($employees)) {
-            $this->success("Employees retrieved successfully", $employees);
-        }
+            $employee = $this->adminService->getEmployeeById(
+                (int)$_GET["emp_id"]
+            );
 
-        $this->success("No employees found", []);
-    }
+            if (!$employee) {
+                $this->error("Employee not found", 404);
+            }
 
-    public function getEmployeeById($id): void
-    {
-        $employee = $this->employeeService->getEmployee($id);
-
-        if ($employee) {
-            $this->success("Employee found", $employee);
-        }
-
-        $this->error("Employee not found.", 404);
-    }
-
-    public function createEmployee(array $data = []): void
-    {
-        if (
-            empty($data['emp_firstname']) ||
-            empty($data['emp_lastname']) ||
-            empty($data['emp_gender']) ||
-            empty($data['emp_date_of_birth']) ||
-            empty($data['emp_position']) ||
-            empty($data['emp_hourly_rate']) ||
-            empty($data['emp_status'])
-        ) {
-            $this->error("Please fill in all required fields.", 400);
-        }
-
-        $created = $this->employeeService->createEmployee($data);
-
-        if($created){
             $this->success(
-                "Employee created successfully"
+                "Employee retrieved successfully",
+                $employee
             );
         }
-        $this->error("Failed to create employee.", 500);
-    }
-    public function searchEmployee(string $searchTerm): void
-    {
-        $employees = $this->adminService->searchEmployee($searchTerm);
 
-        if (!empty($employees)) {
-            $this->success('Employees found', $employees);
+        // Search employee
+        if (isset($_GET["search"])) {
+
+            $employees = $this->adminService->searchEmployee(
+                $_GET["search"]
+            );
+
+            $this->success(
+                "Search completed",
+                $employees
+            );
         }
 
-        $this->success('No employees matching criteria', []);
+        // Get all employees
+        $employees = $this->adminService->getAllEmployees();
+
+        $this->success(
+            "Employees retrieved successfully",
+            $employees
+        );
     }
 
-    public function deleteEmployee(): void
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE
+    |--------------------------------------------------------------------------
+    */
+
+    private function createEmployee(): void
     {
-        $data = json_decode(file_get_contents("php://input"), true) ?? [];
-
-        if (empty($data["emp_id"])) {
-            $this->error("Employee ID is required.", 400);
-        }
-
-        $deleted = $this->employeeService->deleteEmployee(
-            $data["emp_id"]
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
         );
 
-        if ($deleted) {
-            $this->success("Employee deleted successfully");
+        if (!$data) {
+            $this->error("Invalid request body", 400);
         }
 
-        $this->error("Failed to delete employee.", 500);
+        $success = $this->adminService->createEmployee($data);
+
+        if (!$success) {
+            $this->error("Unable to create employee");
+        }
+
+        $this->success(
+            "Employee created successfully"
+        );
     }
-    public function payEmployee(array $data = []): void
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE
+    |--------------------------------------------------------------------------
+    */
+
+    private function updateEmployee(): void
     {
-        if (empty($data['emp_id']) || empty($data['amount'])) {
-            $this->error('Employee ID and payment amount are required.', 400);
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
+
+        if (!isset($data["emp_id"])) {
+            $this->error(
+                "Employee ID is required",
+                400
+            );
         }
 
-        $isPaid = $this->payrollService->payEmployee($data['emp_id'], $data['amount']);
+        $success = $this->adminService->updateEmployee(
+            (int)$data["emp_id"],
+            $data
+        );
 
-        if ($isPaid) {
-            $this->success('Payment processed successfully', [
-                'emp_id' => $data['emp_id'],
-                'amount' => $data['amount']
-            ]);
+        if (!$success) {
+            $this->error(
+                "Unable to update employee"
+            );
         }
 
-        $this->error('Failed to process payment.', 500);
+        $employee = $this->adminService->getEmployeeById(
+            (int)$data["emp_id"]
+        );
+
+        $this->success(
+            "Employee updated successfully",
+            $employee
+        );
     }
 
-   public function editEmployee(): void
-   {
-       $data = json_decode(file_get_contents("php://input"), true) ?? [];
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE
+    |--------------------------------------------------------------------------
+    */
 
-       if (empty($data["emp_id"])) {
-           $this->error("Employee ID is required.", 400);
-       }
+    private function deleteEmployee(): void
+    {
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
 
-       $updated = $this->employeeService->editEmployee(
-           $data["emp_id"],
-           $data
-       );
+        if (!isset($data["emp_id"])) {
+            $this->error(
+                "Employee ID is required",
+                400
+            );
+        }
 
-       if ($updated) {
-           $this->success("Employee updated successfully");
-       }
+        $success = $this->adminService->deleteEmployee(
+            (int)$data["emp_id"]
+        );
 
-       $this->error("Failed to update employee.", 500);
-   }
+        if (!$success) {
+            $this->error(
+                "Unable to delete employee"
+            );
+        }
+
+        $this->success(
+            "Employee deleted successfully"
+        );
+    }
+}

@@ -2,72 +2,197 @@
 
 namespace attendance;
 
+use response\responseController;
 use service\SessionManager;
-use response\responseController; // Extend or import your response handler class
 
 class attendanceController extends responseController
 {
-    private AttendanceService $service;
+    private attendanceService $attendanceService;
 
-    public function __construct(AttendanceService $attendanceService)
+    public function __construct(attendanceService $attendanceService)
     {
-        $this->service = $attendanceService;
+        $this->attendanceService = $attendanceService;
     }
 
     public function handleRequest(): void
     {
-        $method = $_SERVER['REQUEST_METHOD'];
+        SessionManager::init();
+        SessionManager::isLoggedIn();
 
-        switch ($method) {
-            case 'GET':
-                $this->getMonthlyAttendance();
+        switch ($_SERVER["REQUEST_METHOD"]) {
+
+            case "GET":
+                $this->handleGet();
                 break;
-            case 'POST':
-                $this->markAttendance();
+
+            case "POST":
+                $this->handlePost();
                 break;
+
+            case "DELETE":
+                $this->deleteAttendance();
+                break;
+
             default:
-                $this->error('Method not allowed', 405);
-                break;
+                $this->error("Method Not Allowed", 405);
         }
     }
 
-    private function getMonthlyAttendance(): void
+    /*
+    |--------------------------------------------------------------------------
+    | GET
+    |--------------------------------------------------------------------------
+    */
+
+    private function handleGet(): void
     {
-        SessionManager::isLoggedIn();
+        // Admin: View all attendance
+        if (
+            isset($_SESSION["role"]) &&
+            $_SESSION["role"] === "admin"
+        ) {
 
-        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
-        $month = isset($_GET['month']) ? (string)$_GET['month'] : null;
-        $year  = isset($_GET['year']) ? (string)$_GET['year'] : null;
+            $attendance = $this->attendanceService
+                ->getAllAttendance();
 
-        $attendanceData = $this->service->getMonthlyAttendance($empId, $month, $year);
-
-        $this->success('Monthly attendance retrieved successfully', $attendanceData);
-    }
-
-    private function markAttendance(): void
-    {
-        SessionManager::isLoggedIn();
-
-        $data = json_decode(file_get_contents("php://input"), true) ?? [];
-
-        if (empty($data['emp_id']) || empty($data['status']) || empty($data['date'])) {
-            $this->error('Invalid or missing parameters (emp_id, date, status required).', 400);
+            $this->success(
+                "Attendance retrieved successfully",
+                $attendance
+            );
         }
 
-        $saved = $this->service->recordAttendance(
-            $data['emp_id'],
-            $data['date'],
-            $data['status']
+        // Employee: View own attendance
+        $attendance = $this->attendanceService
+            ->getAttendanceByEmployee(
+                $_SESSION["emp_id"]
+            );
+
+        $this->success(
+            "Attendance retrieved successfully",
+            $attendance
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | POST
+    |--------------------------------------------------------------------------
+    */
+
+    private function handlePost(): void
+    {
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
         );
 
-        if ($saved) {
-            $this->success('Attendance logged successfully', [
-                'emp_id' => $data['emp_id'],
-                'status' => $data['status'],
-                'date'   => $data['date']
-            ], 200);
+        if (!isset($data["action"])) {
+            $this->error("Action is required");
         }
 
-        $this->error('Database operation failed.', 500);
+        switch ($data["action"]) {
+
+            case "time_in":
+
+                if (
+                    $this->attendanceService->timeIn(
+                        $_SESSION["emp_id"]
+                    )
+                ) {
+
+                    $this->success(
+                        "Time In recorded successfully"
+                    );
+
+                } else {
+
+                    $this->error(
+                        "You already timed in today."
+                    );
+
+                }
+
+                break;
+
+            case "time_out":
+
+                if (
+                    $this->attendanceService->timeOut(
+                        $_SESSION["emp_id"]
+                    )
+                ) {
+
+                    $this->success(
+                        "Time Out recorded successfully"
+                    );
+
+                } else {
+
+                    $this->error(
+                        "Unable to record Time Out."
+                    );
+
+                }
+
+                break;
+
+            default:
+
+                $this->error(
+                    "Invalid action"
+                );
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE
+    |--------------------------------------------------------------------------
+    */
+
+    private function deleteAttendance(): void
+    {
+        if (
+            !isset($_SESSION["role"]) ||
+            $_SESSION["role"] !== "admin"
+        ) {
+
+            $this->error(
+                "Unauthorized",
+                403
+            );
+
+        }
+
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
+
+        if (!isset($data["att_id"])) {
+
+            $this->error(
+                "Attendance ID is required",
+                400
+            );
+
+        }
+
+        $deleted = $this->attendanceService
+            ->deleteAttendance(
+                (int)$data["att_id"]
+            );
+
+        if (!$deleted) {
+
+            $this->error(
+                "Unable to delete attendance"
+            );
+
+        }
+
+        $this->success(
+            "Attendance deleted successfully"
+        );
     }
 }

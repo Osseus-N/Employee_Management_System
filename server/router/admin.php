@@ -1,41 +1,53 @@
 <?php
 
+use admin\adminController;
 use admin\adminRepository;
 use admin\adminService;
-use admin\adminController;
-use payroll\payrollRepository;
-use payroll\payrollService;
+
 use employee\employeeRepository;
 use employee\employeeService;
 
-require_once __DIR__ . '/../admin/adminRepository.php';
-require_once __DIR__ . '/../admin/adminService.php';
-require_once __DIR__ . '/../admin/adminController.php';
+require_once "../database/database.php";
 
-require_once __DIR__ . '/../payroll/payrollRepository.php';
-require_once __DIR__ . '/../payroll/payrollService.php';
+require_once "../response/responseController.php";
+require_once "../session/sessionManager.php";
 
-require_once __DIR__ . '/../employee/employeeRepository.php';
-require_once __DIR__ . '/../employee/employeeService.php';
+require_once "../model/Employee.php";
 
-require_once __DIR__ . '/../response/responseController.php';
-require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../session/sessionManager.php';
+require_once "../employee/employeeRepository.php";
+require_once "../employee/employeeService.php";
 
-$database = new Database();
+require_once "../admin/adminRepository.php";
+require_once "../admin/adminService.php";
+require_once "../admin/adminController.php";
 
-$adminRepo    = new \admin\adminRepository($database);
-$payrollRepo  = new \payroll\payrollRepository($database);
-$employeeRepo = new \employee\employeeRepository($database);
+header("Content-Type: application/json");
 
-$adminService    = new \admin\adminService($adminRepo);
-$payrollService  = new \payroll\payrollService($payrollRepo);
-$employeeService = new \employee\employeeService($employeeRepo);
+try {
 
-$controller = new \admin\adminController(
-    $adminService,
-    $payrollService,
-    $employeeService
-);
+    // Database
+    $database = new Database();
 
-$controller->handleRequest();
+    // Employee Module
+    $employeeRepository = new employeeRepository($database);
+    $employeeService = new employeeService($employeeRepository);
+
+    // Admin Module
+    $adminRepository = new adminRepository($database);
+    $adminService = new adminService($adminRepository);
+
+    // Controller
+    $controller = new adminController($adminService);
+
+    // Handle Request
+    $controller->handleRequest();
+
+} catch (Throwable $e) {
+
+    http_response_code(500);
+
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
+}

@@ -1,21 +1,44 @@
 <?php
 
-use attendance\AttendanceRepository;
-use attendance\AttendanceService;
 use attendance\attendanceController;
+use attendance\attendanceRepository;
+use attendance\attendanceService;
 
-require_once __DIR__ . '/../attendance/AttendanceRepository.php';
-require_once __DIR__ . '/../attendance/AttendanceService.php';
-require_once __DIR__ . '/../attendance/attendanceController.php';
+require_once "../database/database.php";
 
-require_once __DIR__ . '/../response/responseController.php';
-require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../session/sessionManager.php';
+require_once "../response/responseController.php";
+require_once "../session/sessionManager.php";
 
-$database = new Database();
+require_once "../attendance/attendanceRepository.php";
+require_once "../attendance/attendanceService.php";
+require_once "../attendance/attendanceController.php";
 
-$repo       = new \attendance\AttendanceRepository($database);
-$service    = new \attendance\AttendanceService($repo);
-$controller = new \attendance\attendanceController($service);
+header("Content-Type: application/json");
 
-$controller->handleRequest();
+try {
+
+    // Database
+    $database = new Database();
+
+    // Repository
+    $attendanceRepository = new attendanceRepository($database);
+
+    // Service
+    $attendanceService = new attendanceService($attendanceRepository);
+
+    // Controller
+    $attendanceController = new attendanceController($attendanceService);
+
+    // Handle Request
+    $attendanceController->handleRequest();
+
+} catch (Throwable $e) {
+
+    http_response_code(500);
+
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
+
+}

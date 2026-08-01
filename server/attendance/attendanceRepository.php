@@ -2,56 +2,106 @@
 
 namespace attendance;
 
-use database;
+use Database;
 
 class attendanceRepository
 {
-    private $conn;
     private Database $db;
- public function __construct(Database $db)
- {
-    $this->conn = $db->connect();
-    $this->db = $db;
- }
-public function getMonthlyAttendance($emp_id, $year, $month){
 
-     $sql = "SELECT att_work_date, att_status 
-             FROM attendance 
-             WHERE emp_id = ? 
-               AND YEAR(att_work_date) = ? 
-               AND MONTH(att_work_date) = ?
-        ORDER BY att_work_date ASC";
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+        $this->db->connect();
+    }
 
-     $stmt = $this->conn->prepare($sql);
-     $stmt->bind_param("ssi", $emp_id, $year, $month);
-     $stmt->execute();
+    /**
+     * Get all attendance records
+     */
+    public function getAllAttendance()
+    {
+        $result = $this->db->select("attendance");
 
-    $result = $stmt->fetch(MYSQLI_ASSOC);
-    return $result ?: null;
-}
-    public function insertAttendance($emp_id, $date, $status): bool{
+        $attendance = [];
 
-     return $this->db->insert('attendance', [$emp_id, $date, $status]);
- }
+        while ($row = $result->fetch_assoc()) {
+            $attendance[] = $row;
+        }
 
- public function presentDays($emp_id, $year, $month){
+        return $attendance;
+    }
 
-         $sql = "SELECT COUNT(*) AS total_present
-            FROM attendance
-            WHERE emp_id = ?
-              AND att_status = 'Present'
-              AND YEAR(att_work_date) = ?
-              AND MONTH(att_work_date) = ?;";
+    /**
+     * Get attendance by employee
+     */
+    public function getAttendanceByEmployee($empId)
+    {
+        $result = $this->db->select(
+            "attendance",
+            "*",
+            [
+                "emp_id" => $empId
+            ]
+        );
 
-         $stmt = $this->db->prepare($sql);
-         $stmt->bind_param("ssi", $emp_id, $year, $month);
-         $result = $stmt->fetch(MYSQLI_ASSOC);
+        $attendance = [];
 
-         return (int)($result['total_present'] ?? 0);
-     }
+        while ($row = $result->fetch_assoc()) {
+            $attendance[] = $row;
+        }
 
-    public function checkAttendance($emp_id,$att_work_date): bool{
+        return $attendance;
+    }
 
-     return $this->db->select('attendance', '', ['emp_id' => $emp_id]);
- }
+    /**
+     * Get attendance for one work date
+     */
+    public function getAttendanceByDate($empId, $date)
+    {
+        $result = $this->db->select(
+            "attendance",
+            "*",
+            [
+                "emp_id" => $empId,
+                "att_work_date" => $date
+            ]
+        );
+
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Time In
+     */
+    public function createAttendance(array $data)
+    {
+        return $this->db->insert(
+            "attendance",
+            $data
+        );
+    }
+
+    /**
+     * Time Out
+     */
+    public function updateAttendance(array $data, array $where)
+    {
+        return $this->db->update(
+            "attendance",
+            $data,
+            $where
+        );
+    }
+
+    /**
+     * Delete attendance
+     */
+    public function deleteAttendance($attId)
+    {
+        return $this->db->delete(
+            "attendance",
+            [
+                "att_id" => $attId
+            ]
+        );
+    }
 }

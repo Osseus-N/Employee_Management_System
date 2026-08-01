@@ -2,73 +2,112 @@
 
 namespace attendance;
 
-use database;
-use mysqli;
-
 class attendanceService
 {
-    private AttendanceRepository $repo;
+    private attendanceRepository $attendanceRepository;
 
-    public function __construct(AttendanceRepository $attendanceRepository){
-
-        $this->repo = $attendanceRepository;
-
-    }
-    public function recordAttendance($emp_id, $date ,$status): array
+    public function __construct(attendanceRepository $attendanceRepository)
     {
-
-        $existing = $this->repo->checkAttendance($emp_id, $date);
-
-        if($existing){
-            return [
-                'success' => false,
-                'message' => 'Already marked as present'
-            ];
-        }
-
-        $saves = $this->repo->insertAttendance($emp_id, $date, $status);
-        return [
-            'success' => $saves,
-            'message' => 'Attendance Marked Successfully'
-        ];
+        $this->attendanceRepository = $attendanceRepository;
     }
 
-    public function getMonthlyAttendance($emp_id, $month, $year): array
+    /*
+    |--------------------------------------------------------------------------
+    | Get All Attendance
+    |--------------------------------------------------------------------------
+    */
+
+    public function getAllAttendance(): array
     {
-        $this->isDateValid($month, $year);
-
-        $data = $this->repo->getMonthlyAttendance($emp_id, $month, $year);
-
-        return [
-            'success' => true,
-            'data' => $data
-        ];
+        return $this->attendanceRepository->getAllAttendance();
     }
-    public function presentAttendance($emp_id, $month, $year): array{
 
-        $this->isDateValid($month, $year);
+    /*
+    |--------------------------------------------------------------------------
+    | Get Attendance of One Employee
+    |--------------------------------------------------------------------------
+    */
 
-        $data = $this->repo->presentDays($emp_id, $month, $year);
-
-        return [
-            'success' => true,
-            'data' => $data
-        ];
+    public function getAttendanceByEmployee(int $empId): array
+    {
+        return $this->attendanceRepository->getAttendanceByEmployee($empId);
     }
-    private function isDateValid($month, $year){
-        if ($month < 1 || $month > 12) {
-            return [
-                'success' => false,
-                'message' => 'Invalid month provided. Month must be between 1 and 12.'
-            ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Time In
+    |--------------------------------------------------------------------------
+    */
+
+    public function timeIn(int $empId): bool
+    {
+        $today = date("Y-m-d");
+
+        $existing = $this->attendanceRepository
+            ->getAttendanceByDate($empId, $today);
+
+        if ($existing) {
+            return false;
         }
 
-        $currentYear = (int)date('Y');
-        if ($year < 2000 || $year > ($currentYear + 1)) {
-            return [
-                'success' => false,
-                'message' => 'Invalid year provided.'
-            ];
+        return $this->attendanceRepository
+            ->createAttendance([
+                "emp_id" => $empId,
+                "att_work_date" => $today,
+                "att_clock_in" => date("Y-m-d H:i:s")
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Time Out
+    |--------------------------------------------------------------------------
+    */
+
+    public function timeOut(int $empId): bool
+    {
+        $today = date("Y-m-d");
+
+        $attendance = $this->attendanceRepository
+            ->getAttendanceByDate($empId, $today);
+
+        if (!$attendance) {
+            return false;
         }
+
+        if (!empty($attendance["att_clock_out"])) {
+            return false;
+        }
+
+        $clockIn = strtotime($attendance["att_clock_in"]);
+        $clockOut = time();
+
+        $hours = round(
+            ($clockOut - $clockIn) / 3600,
+            2
+        );
+
+        return $this->attendanceRepository
+            ->updateAttendance(
+                [
+                    "att_clock_out" => date("Y-m-d H:i:s"),
+                    "att_total_hours" => $hours
+                ],
+                [
+                    "att_id" => $attendance["att_id"]
+                ]
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete Attendance
+    |--------------------------------------------------------------------------
+    */
+
+    public function deleteAttendance(int $attId): bool
+    {
+        return $this->attendanceRepository
+            ->deleteAttendance($attId);
     }
 }

@@ -8,91 +8,159 @@ use model\Employee;
 class adminRepository
 {
     private Database $db;
-    private $conn;
-    public function __construct(Database $db){
-    $this->db = $db;
-    $this->conn = $this->db->connect();
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+        $this->db->connect();
     }
 
-    protected function rowToEmployee(array $row): Employee
+    /*
+    |--------------------------------------------------------------------------
+    | Get All Employees
+    |--------------------------------------------------------------------------
+    */
+
+    public function getAllEmployees(): array
     {
-        return new Employee(
-            $row['emp_firstname'],
-            $row['emp_lastname'],
-            $row['emp_gender'],
-            $row['emp_position'],
-            (float) ($row['emp_hourly_rate'] ?? 0.00),
-            $row['emp_date_of_birth'] ?? null,
-            $row['emp_contact_number'] ?? null,
-            (int) ($row['emp_id'] ?? 0),
-            $row['emp_status'] ?? 'Active',
-            $row['emp_created_at'] ?? null
+        $result = $this->db->select("employees");
+
+        $employees = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $employees[] = $row;
+        }
+
+        return $employees;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get One Employee
+    |--------------------------------------------------------------------------
+    */
+
+    public function getEmployeeById(int $empId): ?array
+    {
+        $result = $this->db->select(
+            "employees",
+            "*",
+            [
+                "emp_id" => $empId
+            ]
         );
-    }
-    public function getAllEmployee(){
-        $employees = $this->db->select('employees', '*');
 
-        $result = $employees->fetch_assoc();
-
-        $users = [];
-
-        foreach ($result as $row) {
-            $users[] = $this->rowToEmployee($row);
-        }
-        return $users;
-    }
-    public function createEmployee(Employee $employee, string $email, string $rawPassword): bool
-    {
-        try {
-            $this->conn->begin_transaction();
-
-            $employeeData = [
-                'emp_firstname'      => $employee->getEmpFirstname(),
-                'emp_lastname'       => $employee->getEmpLastname(),
-                'emp_gender'         => $employee->getEmpGender(),
-                'emp_date_of_birth'  => $employee->getEmpDateOfBirth(),
-                'emp_contact_number' => $employee->getEmpContactNumber(),
-                'emp_position'       => $employee->getEmpPosition(),
-                'emp_hourly_rate'    => $employee->getEmpHourlyRate(),
-                'emp_status'         => $employee->getEmpStatus(),
-            ];
-
-            $this->db->insert('employees', $employeeData);
-
-            $empId = $this->conn->insert_id;
-
-            $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
-
-            $accountData = [
-                'emp_id'   => $empId,
-                'email'    => $email,
-                'password' => $hashedPassword,
-            ];
-
-            $this->db->insert('accounts', $accountData);
-
-            $this->conn->commit();
-            return true;
-
-        } catch (\Exception $e) {
-            $this->conn->rollback();
-            throw new \Exception("Failed to register employee and account: " . $e->getMessage());
-        }
-    }
-    public function updateEmployee($data){
-        $data = $this->editEmployee($table, $data, $where);
-
-        if ($data && $data->num_rows > 0) {
-            return $data->fetch_assoc();
+        if ($result && $result->num_rows > 0) {
+            return $result->fetch_assoc();
         }
 
         return null;
     }
-    public function deleteEmployee($emp_id){
 
+    /*
+    |--------------------------------------------------------------------------
+    | Create Employee
+    |--------------------------------------------------------------------------
+    */
+
+    public function createEmployee(Employee $employee): bool
+    {
+        return $this->db->insert(
+            "employees",
+            [
+                "emp_firstname"      => $employee->getEmpFirstname(),
+                "emp_lastname"       => $employee->getEmpLastname(),
+                "emp_gender"         => $employee->getEmpGender(),
+                "emp_date_of_birth"  => $employee->getEmpDateOfBirth(),
+                "emp_contact_number" => $employee->getEmpContactNumber(),
+                "emp_position"       => $employee->getEmpPosition(),
+                "emp_hourly_rate"    => $employee->getEmpHourlyRate(),
+                "emp_status"         => $employee->getEmpStatus()
+            ]
+        );
     }
-    public function searchEmployee($search){
 
+    /*
+    |--------------------------------------------------------------------------
+    | Update Employee
+    |--------------------------------------------------------------------------
+    */
+
+    public function updateEmployee(
+        int $empId,
+        array $data
+    ): bool {
+
+        return $this->db->update(
+            "employees",
+            $data,
+            [
+                "emp_id" => $empId
+            ]
+        );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Delete Employee
+    |--------------------------------------------------------------------------
+    */
+
+    public function deleteEmployee(
+        int $empId
+    ): bool {
+
+        return $this->db->delete(
+            "employees",
+            [
+                "emp_id" => $empId
+            ]
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Search Employee
+    |--------------------------------------------------------------------------
+    */
+
+    public function searchEmployee(
+        string $keyword
+    ): array {
+
+        $employees = $this->getAllEmployees();
+
+        if (empty($keyword)) {
+            return $employees;
+        }
+
+        $keyword = strtolower(trim($keyword));
+
+        return array_values(array_filter(
+            $employees,
+            function ($employee) use ($keyword) {
+
+                return
+                    str_contains(
+                        strtolower($employee["emp_firstname"]),
+                        $keyword
+                    ) ||
+
+                    str_contains(
+                        strtolower($employee["emp_lastname"]),
+                        $keyword
+                    ) ||
+
+                    str_contains(
+                        strtolower($employee["emp_position"]),
+                        $keyword
+                    ) ||
+
+                    str_contains(
+                        strtolower($employee["emp_status"]),
+                        $keyword
+                    );
+            }
+        ));
+    }
 }

@@ -4,9 +4,25 @@ class Database
 {
     private mysqli $conn;
 
-    // Connect to Database
-    public function connect()
+    /**
+     * Automatically connect when Database is created.
+     */
+    public function __construct()
     {
+        $this->connect();
+    }
+
+    /**
+     * Connect to MySQL Database
+     */
+    public function connect(): mysqli
+    {
+        if (isset($this->conn)) {
+            return $this->conn;
+        }
+
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
         try {
 
             $this->conn = new mysqli(
@@ -16,172 +32,289 @@ class Database
                 "employee_management"
             );
 
-            if ($this->conn->connect_error) {
-                die("Connection Failed: " . $this->conn->connect_error);
-            }
+            $this->conn->set_charset("utf8mb4");
 
         } catch (mysqli_sql_exception $e) {
 
-            die("Database Error: " . $e->getMessage());
+            throw new Exception(
+                "Database Connection Failed: " .
+                $e->getMessage()
+            );
 
         }
 
         return $this->conn;
     }
 
-    // Close Connection
-    public function disconnect()
+    /**
+     * Return active MySQL connection
+     */
+    public function getConnection(): mysqli
     {
-        if ($this->conn) {
+        return $this->conn;
+    }
+
+    /**
+     * Close database connection
+     */
+    public function disconnect(): void
+    {
+        if (isset($this->conn)) {
+
             $this->conn->close();
-        }
-    }
 
-    // Insert Data
-    public function insert($table, $data)
-    {
-        try {
-
-            $columns = implode(",", array_keys($data));
-
-            $values = "";
-            $types = "";
-
-            foreach ($data as $value) {
-
-                $values .= "?,";
-                $types .= substr(gettype($value), 0, 1);
-
-            }
-
-            $values = rtrim($values, ",");
-
-            $sql = "INSERT INTO $table ($columns) VALUES ($values)";
-
-            $stmt = $this->conn->prepare($sql);
-
-            $stmt->bind_param($types, ...array_values($data));
-
-            $stmt->execute();
-
-            return true;
-
-        } catch (Exception $e) {
-
-            die("Insert Error: " . $e->getMessage());
+            unset($this->conn);
 
         }
     }
 
-    // Select Data
-    public function select($table, $row = "*", $where = null)
-    {
-        try {
-            if (!empty($where) && is_array($where)) {
-                $conditions = [];
-                $types = "";
-
-                foreach ($where as $key => $value) {
-                    $conditions[] = "$key = ?";
-                    $types .= substr(gettype($value), 0, 1);
-                }
-
-                // Cleanly join conditions with " AND "
-                $conditionString = implode(' AND ', $conditions);
-
-                $sql = "SELECT $row FROM $table WHERE $conditionString";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bind_param($types, ...array_values($where));
-
-            } else {
-                $sql = "SELECT $row FROM $table";
-                $stmt = $this->conn->prepare($sql);
-            }
-
-            $stmt->execute();
-            return $stmt->get_result();
-
-        } catch (Exception $e) {
-            die("Select Error: " . $e->getMessage());
-        }
-    }
-
-    // Update Data
-    public function update($table, array $data, array $where)
-    {
-        try {
-            if (empty($data) || empty($where)) {
-                return false;
-            }
-
-            $setParts = [];
-            $whereParts = [];
-            $types = "";
-            $values = [];
-
-            foreach ($data as $key => $value) {
-                $setParts[] = "$key = ?";
-                $types .= $this->getTypeChar($value);
-                $values[] = $value;
-            }
-
-            foreach ($where as $key => $value) {
-                $whereParts[] = "$key = ?";
-                $types .= $this->getTypeChar($value);
-                $values[] = $value;
-            }
-
-            $setSql = implode(", ", $setParts);
-            $whereSql = implode(" AND ", $whereParts);
-
-            $sql = "UPDATE $table SET $setSql WHERE $whereSql";
-
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param($types, ...$values);
-
-            return $stmt->execute();
-
-        } catch (Exception $e) {
-            die("Update Error: " . $e->getMessage());
-        }
-    }
-
+    /**
+     * Determine bind_param() type
+     */
     private function getTypeChar($value): string
     {
-        if (is_int($value)) return "i";
-        if (is_float($value)) return "d";
+        if (is_int($value)) {
+            return "i";
+        }
+
+        if (is_float($value)) {
+            return "d";
+        }
+
         return "s";
     }
 
-    // Delete Data
-    public function delete($table, $where)
+    /**
+     * Build WHERE clause
+     *
+     * Example:
+     * ["emp_id"=>5,"status"=>"Active"]
+     *
+     * becomes
+     *
+     * emp_id=? AND status=?
+     */
+    private function buildWhere(array $where): array
+    {
+        $conditions = [];
+        $types = "";
+        $values = [];
+
+        foreach ($where as $column => $value) {
+
+            $conditions[] = "$column = ?";
+
+            $types .= $this->getTypeChar($value);
+
+            $values[] = $value;
+
+        }
+
+        return [
+
+            implode(" AND ", $conditions),
+
+            $types,
+
+            $values
+
+        ];
+    }
+}
+
+    /**
+     * Insert Data
+     */
+    public function insert(string $table, array $data)
     {
         try {
 
-            $condition = "";
+            $columns = implode(", ", array_keys($data));
+
+            $placeholders = implode(", ", array_fill(0, count($data), "?"));
+
             $types = "";
+            $values = [];
 
-            foreach ($where as $key => $value) {
+            foreach ($data as $value) {
 
-                $condition .= "$key=? AND ";
-                $types .= substr(gettype($value), 0, 1);
+                $types .= $this->getTypeChar($value);
+                $values[] = $value;
 
             }
 
-            $condition = substr($condition, 0, -5);
-
-            $sql = "DELETE FROM $table WHERE $condition";
+            $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
 
             $stmt = $this->conn->prepare($sql);
 
-            $stmt->bind_param($types, ...array_values($where));
+            $stmt->bind_param($types, ...$values);
 
-            return $stmt->execute();
+            $stmt->execute();
 
-        } catch (Exception $e) {
-
-            die("Delete Error: " . $e->getMessage());
+            return $this->conn->insert_id;
 
         }
+
+        catch (Exception $e) {
+
+            throw new Exception(
+                "Insert Error: " .
+                $e->getMessage()
+            );
+
+        }
+
     }
-}
+
+    /**
+     * Select Data
+     */
+    public function select(
+        string $table,
+        string $columns = "*",
+        array $where = []
+    ) {
+
+        try {
+
+            $sql = "SELECT {$columns} FROM {$table}";
+
+            if (!empty($where)) {
+
+                list($condition, $types, $values) =
+                    $this->buildWhere($where);
+
+                $sql .= " WHERE " . $condition;
+
+            }
+
+            $stmt = $this->conn->prepare($sql);
+
+            if (!empty($where)) {
+
+                $stmt->bind_param($types, ...$values);
+
+            }
+
+            $stmt->execute();
+
+            return $stmt->get_result();
+
+        }
+
+        catch (Exception $e) {
+
+            throw new Exception(
+                "Select Error: " .
+                $e->getMessage()
+            );
+
+        }
+
+    }
+
+        /**
+         * Update Data
+         */
+        public function update(string $table, array $data, array $where): bool
+        {
+            try {
+
+                if (empty($data) || empty($where)) {
+                    return false;
+                }
+
+                $set = [];
+                $types = "";
+                $values = [];
+
+                foreach ($data as $column => $value) {
+
+                    $set[] = "$column = ?";
+                    $types .= $this->getTypeChar($value);
+                    $values[] = $value;
+
+                }
+
+                list($condition, $whereTypes, $whereValues) =
+                    $this->buildWhere($where);
+
+                $types .= $whereTypes;
+                $values = array_merge($values, $whereValues);
+
+                $sql = "UPDATE {$table}
+                        SET " . implode(", ", $set) . "
+                        WHERE {$condition}";
+
+                $stmt = $this->conn->prepare($sql);
+
+                $stmt->bind_param($types, ...$values);
+
+                return $stmt->execute();
+
+            }
+
+            catch (Exception $e) {
+
+                throw new Exception(
+                    "Update Error: " .
+                    $e->getMessage()
+                );
+
+            }
+        }
+
+        /**
+         * Delete Data
+         */
+        public function delete(string $table, array $where): bool
+        {
+            try {
+
+                list($condition, $types, $values) =
+                    $this->buildWhere($where);
+
+                $sql = "DELETE FROM {$table}
+                        WHERE {$condition}";
+
+                $stmt = $this->conn->prepare($sql);
+
+                $stmt->bind_param($types, ...$values);
+
+                return $stmt->execute();
+
+            }
+
+            catch (Exception $e) {
+
+                throw new Exception(
+                    "Delete Error: " .
+                    $e->getMessage()
+                );
+
+            }
+        }
+
+        /**
+         * Begin Transaction
+         */
+        public function beginTransaction(): void
+        {
+            $this->conn->begin_transaction();
+        }
+
+        /**
+         * Commit Transaction
+         */
+        public function commit(): void
+        {
+            $this->conn->commit();
+        }
+
+        /**
+         * Rollback Transaction
+         */
+        public function rollback(): void
+        {
+            $this->conn->rollback();
+        }

@@ -11,26 +11,60 @@ class employeeService
         $this->employeeRepository = $employeeRepository;
     }
 
-    public function getEmployee($emp_id)
+    /**
+     * Get logged-in employee
+     */
+    public function getEmployee(int $empId): ?array
     {
-        return $this->employeeRepository->getEmployee($emp_id);
+        return $this->employeeRepository->getEmployee($empId);
     }
 
-    public function createEmployee(array $data)
+    /**
+     * Update logged-in employee
+     */
+    public function updateEmployee(int $empId, array $data): bool
     {
-        return $this->employeeRepository->createEmployee($data);
-    }
+        $updateData = [];
 
-    public function editEmployee($emp_id, array $data)
-    {
-        return $this->employeeRepository->editEmployee(
-            $data,
-            ["emp_id" => $emp_id]
+        if (isset($data["emp_firstname"])) {
+            $updateData["emp_firstname"] = trim($data["emp_firstname"]);
+        }
+
+        if (isset($data["emp_lastname"])) {
+            $updateData["emp_lastname"] = trim($data["emp_lastname"]);
+        }
+
+        if (isset($data["emp_gender"])) {
+            $updateData["emp_gender"] = $data["emp_gender"];
+        }
+
+        if (isset($data["emp_date_of_birth"])) {
+            $updateData["emp_date_of_birth"] = $data["emp_date_of_birth"];
+        }
+
+        if (isset($data["emp_contact_number"])) {
+            $updateData["emp_contact_number"] = trim($data["emp_contact_number"]);
+        }
+
+        if (isset($data["emp_position"])) {
+            $updateData["emp_position"] = trim($data["emp_position"]);
+        }
+
+        if (isset($data["emp_hourly_rate"])) {
+            $updateData["emp_hourly_rate"] = (float)$data["emp_hourly_rate"];
+        }
+
+        if (isset($data["emp_status"])) {
+            $updateData["emp_status"] = $data["emp_status"];
+        }
+
+        if (empty($updateData)) {
+            return false;
+        }
+
+        return $this->employeeRepository->updateEmployee(
+            $empId,
+            $updateData
         );
-    }
-
-    public function deleteEmployee($emp_id)
-    {
-        return $this->employeeRepository->deleteEmployee($emp_id);
     }
 }
