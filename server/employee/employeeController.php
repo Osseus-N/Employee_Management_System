@@ -5,6 +5,11 @@ namespace employee;
 use response\responseController;
 use service\SessionManager;
 
+/**
+ * Self-service endpoint: a logged-in employee (or admin) can view/edit
+ * only THEIR OWN record. Full CRUD over all employees lives in
+ * admin\adminController.
+ */
 class employeeController extends responseController
 {
     private employeeService $employeeService;
@@ -17,72 +22,63 @@ class employeeController extends responseController
     public function handleRequest(): void
     {
         SessionManager::init();
-        SessionManager::isLoggedIn();
 
-        switch ($_SERVER["REQUEST_METHOD"]) {
+        if (!SessionManager::isLoggedIn()) {
+            $this->error('Please log in first.', 401);
+        }
 
-            case "GET":
-                $this->getEmployee();
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        switch ($method) {
+            case 'GET':
+                $this->getProfile();
                 break;
-
-            case "PUT":
-                $this->updateEmployee();
+            case 'PUT':
+                $this->updateProfile();
                 break;
-
             default:
-                $this->error("Method Not Allowed", 405);
+                $this->error('Method not allowed', 405);
         }
     }
 
-    /**
-     * Get logged-in employee
-     */
-    private function getEmployee(): void
+    public function getProfile(): void
     {
-        $empId = SessionManager::getEmpId();
-
+        $empId = SessionManager::currentEmpId();
         $employee = $this->employeeService->getEmployee($empId);
 
-        if (!$employee) {
-            $this->error("Employee not found", 404);
+        if ($employee) {
+            $this->success('Profile retrieved', $employee);
         }
 
-        $this->success(
-            "Employee retrieved successfully",
-            $employee
-        );
+        $this->error('Employee not found', 404);
     }
 
-    /**
-     * Update logged-in employee
-     */
-    private function updateEmployee(): void
+    public function updateProfile(): void
     {
-        $empId = SessionManager::getEmpId();
+        $empId = SessionManager::currentEmpId();
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        $data = json_decode(
-            file_get_contents("php://input"),
-            true
-        );
-
-        if (!$data) {
-            $this->error("No data received", 400);
+        $existing = $this->employeeService->getEmployee($empId);
+        if (!$existing) {
+            $this->error('Employee not found', 404);
         }
 
-        $updated = $this->employeeService->updateEmployee(
-            $empId,
-            $data
-        );
+        // Self-service employees may only change contact info, not their
+        // own position, rate, or status.
+        $data['emp_firstname']      = $data['emp_firstname'] ?? $existing['emp_firstname'];
+        $data['emp_lastname']       = $data['emp_lastname'] ?? $existing['emp_lastname'];
+        $data['emp_gender']         = $existing['emp_gender'];
+        $data['emp_date_of_birth']  = $existing['emp_date_of_birth'];
+        $data['emp_position']       = $existing['emp_position'];
+        $data['emp_hourly_rate']    = $existing['emp_hourly_rate'];
+        $data['emp_status']         = $existing['emp_status'];
 
-        if (!$updated) {
-            $this->error("Unable to update employee", 400);
+        [$ok, $error] = $this->employeeService->editEmployee($empId, $data);
+
+        if ($ok) {
+            $this->success('Profile updated successfully', ['emp_id' => $empId]);
         }
 
-        $employee = $this->employeeService->getEmployee($empId);
-
-        $this->success(
-            "Employee updated successfully",
-            $employee
-        );
+        $this->error($error ?? 'Failed to update profile', 400);
     }
 }

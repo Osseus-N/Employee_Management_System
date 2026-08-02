@@ -2,106 +2,69 @@
 
 namespace attendance;
 
-use Database;
+use database\Database;
+use PDO;
 
 class attendanceRepository
 {
-    private Database $db;
+    private PDO $db;
 
-    public function __construct(Database $db)
+    public function __construct()
     {
-        $this->db = $db;
-        $this->db->connect();
+        $this->db = Database::getConnection();
     }
 
-    /**
-     * Get all attendance records
-     */
-    public function getAllAttendance()
+    public function findAll(): array
     {
-        $result = $this->db->select("attendance");
-
-        $attendance = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $attendance[] = $row;
-        }
-
-        return $attendance;
-    }
-
-    /**
-     * Get attendance by employee
-     */
-    public function getAttendanceByEmployee($empId)
-    {
-        $result = $this->db->select(
-            "attendance",
-            "*",
-            [
-                "emp_id" => $empId
-            ]
+        $stmt = $this->db->query(
+            "SELECT a.*, e.emp_firstname, e.emp_lastname
+             FROM attendance a
+             INNER JOIN employees e ON a.emp_id = e.emp_id
+             ORDER BY a.att_work_date DESC"
         );
 
-        $attendance = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $attendance[] = $row;
-        }
-
-        return $attendance;
+        return $stmt->fetchAll();
     }
 
-    /**
-     * Get attendance for one work date
-     */
-    public function getAttendanceByDate($empId, $date)
+    public function findByEmployee(int $empId): array
     {
-        $result = $this->db->select(
-            "attendance",
-            "*",
-            [
-                "emp_id" => $empId,
-                "att_work_date" => $date
-            ]
+        $stmt = $this->db->prepare(
+            "SELECT * FROM attendance WHERE emp_id = :id ORDER BY att_work_date DESC"
         );
+        $stmt->execute(['id' => $empId]);
 
-        return $result->fetch_assoc();
+        return $stmt->fetchAll();
     }
 
-    /**
-     * Time In
-     */
-    public function createAttendance(array $data)
+    public function findTodayRecord(int $empId, string $date): ?array
     {
-        return $this->db->insert(
-            "attendance",
-            $data
+        $stmt = $this->db->prepare(
+            "SELECT * FROM attendance WHERE emp_id = :id AND att_work_date = :date"
         );
+        $stmt->execute(['id' => $empId, 'date' => $date]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
     }
 
-    /**
-     * Time Out
-     */
-    public function updateAttendance(array $data, array $where)
+    public function clockIn(int $empId, string $date, string $time): int
     {
-        return $this->db->update(
-            "attendance",
-            $data,
-            $where
+        $stmt = $this->db->prepare(
+            "INSERT INTO attendance (emp_id, att_work_date, att_clock_in)
+             VALUES (:id, :date, :time)"
         );
+        $stmt->execute(['id' => $empId, 'date' => $date, 'time' => $time]);
+
+        return (int) $this->db->lastInsertId();
     }
 
-    /**
-     * Delete attendance
-     */
-    public function deleteAttendance($attId)
+    public function clockOut(int $attId, string $time, float $totalHours): bool
     {
-        return $this->db->delete(
-            "attendance",
-            [
-                "att_id" => $attId
-            ]
+        $stmt = $this->db->prepare(
+            "UPDATE attendance SET att_clock_out = :time, att_total_hours = :hours
+             WHERE att_id = :id"
         );
+
+        return $stmt->execute(['time' => $time, 'hours' => $totalHours, 'id' => $attId]);
     }
 }

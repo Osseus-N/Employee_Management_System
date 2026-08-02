@@ -2,69 +2,71 @@
 
 namespace employee;
 
+use model\Employee;
+
 class employeeService
 {
-    private employeeRepository $employeeRepository;
+    private employeeRepository $repository;
 
-    public function __construct(employeeRepository $employeeRepository)
+    public function __construct(employeeRepository $repository)
     {
-        $this->employeeRepository = $employeeRepository;
+        $this->repository = $repository;
     }
 
-    /**
-     * Get logged-in employee
-     */
-    public function getEmployee(int $empId): ?array
+    public function getAllEmployees(): array
     {
-        return $this->employeeRepository->getEmployee($empId);
+        return $this->repository->findAll();
     }
 
-    /**
-     * Update logged-in employee
-     */
-    public function updateEmployee(int $empId, array $data): bool
+    public function getEmployee(int $id): ?array
     {
-        $updateData = [];
+        return $this->repository->findById($id);
+    }
 
-        if (isset($data["emp_firstname"])) {
-            $updateData["emp_firstname"] = trim($data["emp_firstname"]);
+    public function searchEmployee(string $term): array
+    {
+        return $this->repository->search($term);
+    }
+
+    /** @return array{0: bool, 1: array|string} [success, employeeArray|errorMessage] */
+    public function createEmployee(array $data): array
+    {
+        $model = Employee::fromArray($data);
+        $errors = $model->validate();
+
+        if (!empty($errors)) {
+            return [false, implode(' ', $errors)];
         }
 
-        if (isset($data["emp_lastname"])) {
-            $updateData["emp_lastname"] = trim($data["emp_lastname"]);
+        $id = $this->repository->create($data);
+        $created = $this->repository->findById($id);
+
+        return [true, $created];
+    }
+
+    /** @return array{0: bool, 1: string|null} [success, errorMessage] */
+    public function editEmployee(int $id, array $data): array
+    {
+        $existing = $this->repository->findById($id);
+        if (!$existing) {
+            return [false, 'Employee not found.'];
         }
 
-        if (isset($data["emp_gender"])) {
-            $updateData["emp_gender"] = $data["emp_gender"];
+        $merged = array_merge($existing, $data);
+        $model = Employee::fromArray($merged);
+        $errors = $model->validate();
+
+        if (!empty($errors)) {
+            return [false, implode(' ', $errors)];
         }
 
-        if (isset($data["emp_date_of_birth"])) {
-            $updateData["emp_date_of_birth"] = $data["emp_date_of_birth"];
-        }
+        $ok = $this->repository->update($id, $merged);
 
-        if (isset($data["emp_contact_number"])) {
-            $updateData["emp_contact_number"] = trim($data["emp_contact_number"]);
-        }
+        return [$ok, $ok ? null : 'Database update failed.'];
+    }
 
-        if (isset($data["emp_position"])) {
-            $updateData["emp_position"] = trim($data["emp_position"]);
-        }
-
-        if (isset($data["emp_hourly_rate"])) {
-            $updateData["emp_hourly_rate"] = (float)$data["emp_hourly_rate"];
-        }
-
-        if (isset($data["emp_status"])) {
-            $updateData["emp_status"] = $data["emp_status"];
-        }
-
-        if (empty($updateData)) {
-            return false;
-        }
-
-        return $this->employeeRepository->updateEmployee(
-            $empId,
-            $updateData
-        );
+     {
+  public function deleteEmployee(int $id): bool
+         return $this->repository->delete($id);
     }
 }

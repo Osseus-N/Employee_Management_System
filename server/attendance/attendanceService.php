@@ -2,112 +2,60 @@
 
 namespace attendance;
 
+use Exception;
+
 class attendanceService
 {
-    private attendanceRepository $attendanceRepository;
+    private attendanceRepository $repository;
 
-    public function __construct(attendanceRepository $attendanceRepository)
+    public function __construct(attendanceRepository $repository)
     {
-        $this->attendanceRepository = $attendanceRepository;
+        $this->repository = $repository;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get All Attendance
-    |--------------------------------------------------------------------------
-    */
-
-    public function getAllAttendance(): array
+    public function getAll(): array
     {
-        return $this->attendanceRepository->getAllAttendance();
+        return $this->repository->findAll();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get Attendance of One Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function getAttendanceByEmployee(int $empId): array
+    public function getByEmployee(int $empId): array
     {
-        return $this->attendanceRepository->getAttendanceByEmployee($empId);
+        return $this->repository->findByEmployee($empId);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Time In
-    |--------------------------------------------------------------------------
-    */
-
-    public function timeIn(int $empId): bool
+    /** @throws Exception */
+    public function clockIn(int $empId): array
     {
-        $today = date("Y-m-d");
+        $date = date('Y-m-d');
+        $time = date('Y-m-d H:i:s');
 
-        $existing = $this->attendanceRepository
-            ->getAttendanceByDate($empId, $today);
-
-        if ($existing) {
-            return false;
+        if ($this->repository->findTodayRecord($empId, $date)) {
+            throw new Exception('Already clocked in today.');
         }
 
-        return $this->attendanceRepository
-            ->createAttendance([
-                "emp_id" => $empId,
-                "att_work_date" => $today,
-                "att_clock_in" => date("Y-m-d H:i:s")
-            ]);
+        $id = $this->repository->clockIn($empId, $date, $time);
+
+        return ['att_id' => $id, 'att_work_date' => $date, 'att_clock_in' => $time];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Time Out
-    |--------------------------------------------------------------------------
-    */
-
-    public function timeOut(int $empId): bool
+    /** @throws Exception */
+    public function clockOut(int $empId): array
     {
-        $today = date("Y-m-d");
+        $date = date('Y-m-d');
+        $record = $this->repository->findTodayRecord($empId, $date);
 
-        $attendance = $this->attendanceRepository
-            ->getAttendanceByDate($empId, $today);
-
-        if (!$attendance) {
-            return false;
+        if (!$record) {
+            throw new Exception('No clock-in record found for today.');
+        }
+        if ($record['att_clock_out']) {
+            throw new Exception('Already clocked out today.');
         }
 
-        if (!empty($attendance["att_clock_out"])) {
-            return false;
-        }
+        $timeOut = date('Y-m-d H:i:s');
+        $hours = round((strtotime($timeOut) - strtotime($record['att_clock_in'])) / 3600, 2);
 
-        $clockIn = strtotime($attendance["att_clock_in"]);
-        $clockOut = time();
+        $this->repository->clockOut((int) $record['att_id'], $timeOut, $hours);
 
-        $hours = round(
-            ($clockOut - $clockIn) / 3600,
-            2
-        );
-
-        return $this->attendanceRepository
-            ->updateAttendance(
-                [
-                    "att_clock_out" => date("Y-m-d H:i:s"),
-                    "att_total_hours" => $hours
-                ],
-                [
-                    "att_id" => $attendance["att_id"]
-                ]
-            );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete Attendance
-    |--------------------------------------------------------------------------
-    */
-
-    public function deleteAttendance(int $attId): bool
-    {
-        return $this->attendanceRepository
-            ->deleteAttendance($attId);
+        return ['att_clock_out' => $timeOut, 'att_total_hours' => $hours];
     }
 }

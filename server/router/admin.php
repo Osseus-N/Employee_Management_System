@@ -1,53 +1,26 @@
 <?php
 
+require_once __DIR__ . '/../database/database.php';
+require_once __DIR__ . '/../session/sessionManager.php';
+require_once __DIR__ . '/../response/responseController.php';
+require_once __DIR__ . '/../model/employee.php';
+require_once __DIR__ . '/../employee/employeeRepository.php';
+require_once __DIR__ . '/../employee/employeeService.php';
+require_once __DIR__ . '/../admin/adminRepository.php';
+require_once __DIR__ . '/../admin/adminService.php';
+require_once __DIR__ . '/../admin/adminController.php';
+
 use admin\adminController;
 use admin\adminRepository;
 use admin\adminService;
-
 use employee\employeeRepository;
 use employee\employeeService;
 
-require_once "../database/database.php";
+$employeeRepository = new employeeRepository();
+$employeeService    = new employeeService($employeeRepository);
 
-require_once "../response/responseController.php";
-require_once "../session/sessionManager.php";
+$adminRepository = new adminRepository();
+$adminService    = new adminService($adminRepository);
 
-require_once "../model/Employee.php";
-
-require_once "../employee/employeeRepository.php";
-require_once "../employee/employeeService.php";
-
-require_once "../admin/adminRepository.php";
-require_once "../admin/adminService.php";
-require_once "../admin/adminController.php";
-
-header("Content-Type: application/json");
-
-try {
-
-    // Database
-    $database = new Database();
-
-    // Employee Module
-    $employeeRepository = new employeeRepository($database);
-    $employeeService = new employeeService($employeeRepository);
-
-    // Admin Module
-    $adminRepository = new adminRepository($database);
-    $adminService = new adminService($adminRepository);
-
-    // Controller
-    $controller = new adminController($adminService);
-
-    // Handle Request
-    $controller->handleRequest();
-
-} catch (Throwable $e) {
-
-    http_response_code(500);
-
-    echo json_encode([
-        "success" => false,
-        "message" => $e->getMessage()
-    ]);
-}
+$controller = new adminController($adminService, $employeeService);
+$controller->handleRequest();

@@ -1,16 +1,18 @@
 <?php
 
-use login\logInRepository;
-
-require_once __DIR__ . '/../login/logInRepository.php';
-require_once __DIR__ . '/../login/logInService.php';
-require_once __DIR__ . '/../login/logInController.php';
 require_once __DIR__ . '/../database/database.php';
 require_once __DIR__ . '/../session/sessionManager.php';
+require_once __DIR__ . '/../response/responseController.php';
+require_once __DIR__ . '/../login/loginRepository.php';
+require_once __DIR__ . '/../login/loginService.php';
+require_once __DIR__ . '/../login/loginController.php';
 
-$database = new Database();
-$repo = new \logIn\LoginRepository($database);
-$service = new \login\logInService($repo);
-$controller = new \login\logInController($service);
+use login\loginController;
+use login\loginRepository;
+use login\loginService;
 
-$controller->showLoginForm();
+$repository = new loginRepository();
+$service    = new loginService($repository);
+$controller = new loginController($service);
+
+$controller->handleRequest();

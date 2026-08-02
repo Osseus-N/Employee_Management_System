@@ -2,6 +2,7 @@
 
 namespace attendance;
 
+use Exception;
 use response\responseController;
 use service\SessionManager;
 
@@ -17,182 +18,59 @@ class attendanceController extends responseController
     public function handleRequest(): void
     {
         SessionManager::init();
-        SessionManager::isLoggedIn();
 
-        switch ($_SERVER["REQUEST_METHOD"]) {
+        if (!SessionManager::isLoggedIn()) {
+            $this->error('Please log in first.', 401);
+        }
 
-            case "GET":
-                $this->handleGet();
+        $method = $_SERVER['REQUEST_METHOD'];
+
+        switch ($method) {
+            case 'GET':
+                $this->getAttendance();
                 break;
-
-            case "POST":
-                $this->handlePost();
+            case 'POST':
+                $this->clockIn();
                 break;
-
-            case "DELETE":
-                $this->deleteAttendance();
+            case 'PUT':
+                $this->clockOut();
                 break;
-
             default:
-                $this->error("Method Not Allowed", 405);
+                $this->error('Method not allowed', 405);
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET
-    |--------------------------------------------------------------------------
-    */
-
-    private function handleGet(): void
+    public function getAttendance(): void
     {
-        // Admin: View all attendance
-        if (
-            isset($_SESSION["role"]) &&
-            $_SESSION["role"] === "admin"
-        ) {
-
-            $attendance = $this->attendanceService
-                ->getAllAttendance();
-
-            $this->success(
-                "Attendance retrieved successfully",
-                $attendance
-            );
+        // Admin can view any employee's log via ?emp_id=, or everyone's if omitted.
+        if (SessionManager::isAdmin() && empty($_GET['emp_id'])) {
+            $this->success('Attendance retrieved successfully', $this->attendanceService->getAll());
         }
 
-        // Employee: View own attendance
-        $attendance = $this->attendanceService
-            ->getAttendanceByEmployee(
-                $_SESSION["emp_id"]
-            );
+        $empId = (!empty($_GET['emp_id']) && SessionManager::isAdmin())
+            ? (int) $_GET['emp_id']
+            : SessionManager::currentEmpId();
 
-        $this->success(
-            "Attendance retrieved successfully",
-            $attendance
-        );
+        $this->success('Attendance retrieved successfully', $this->attendanceService->getByEmployee($empId));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | POST
-    |--------------------------------------------------------------------------
-    */
-
-    private function handlePost(): void
+    public function clockIn(): void
     {
-        $data = json_decode(
-            file_get_contents("php://input"),
-            true
-        );
-
-        if (!isset($data["action"])) {
-            $this->error("Action is required");
-        }
-
-        switch ($data["action"]) {
-
-            case "time_in":
-
-                if (
-                    $this->attendanceService->timeIn(
-                        $_SESSION["emp_id"]
-                    )
-                ) {
-
-                    $this->success(
-                        "Time In recorded successfully"
-                    );
-
-                } else {
-
-                    $this->error(
-                        "You already timed in today."
-                    );
-
-                }
-
-                break;
-
-            case "time_out":
-
-                if (
-                    $this->attendanceService->timeOut(
-                        $_SESSION["emp_id"]
-                    )
-                ) {
-
-                    $this->success(
-                        "Time Out recorded successfully"
-                    );
-
-                } else {
-
-                    $this->error(
-                        "Unable to record Time Out."
-                    );
-
-                }
-
-                break;
-
-            default:
-
-                $this->error(
-                    "Invalid action"
-                );
+        try {
+            $result = $this->attendanceService->clockIn(SessionManager::currentEmpId());
+            $this->success('Clocked in successfully', $result, 201);
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), 400);
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE
-    |--------------------------------------------------------------------------
-    */
-
-    private function deleteAttendance(): void
+    public function clockOut(): void
     {
-        if (
-            !isset($_SESSION["role"]) ||
-            $_SESSION["role"] !== "admin"
-        ) {
-
-            $this->error(
-                "Unauthorized",
-                403
-            );
-
+        try {
+            $result = $this->attendanceService->clockOut(SessionManager::currentEmpId());
+            $this->success('Clocked out successfully', $result);
+        } catch (Exception $e) {
+            $this->error($e->getMessage(), 400);
         }
-
-        $data = json_decode(
-            file_get_contents("php://input"),
-            true
-        );
-
-        if (!isset($data["att_id"])) {
-
-            $this->error(
-                "Attendance ID is required",
-                400
-            );
-
-        }
-
-        $deleted = $this->attendanceService
-            ->deleteAttendance(
-                (int)$data["att_id"]
-            );
-
-        if (!$deleted) {
-
-            $this->error(
-                "Unable to delete attendance"
-            );
-
-        }
-
-        $this->success(
-            "Attendance deleted successfully"
-        );
     }
 }

@@ -1,61 +1,65 @@
-//ONLY FOR TEST(Hindi mismong code)
+// This file is only ever loaded from /login/login.html, so its relative
+// path depth to the project root is fixed: one folder up.
+const LOGIN_API = "../server/router/login.php";
+
 document.addEventListener("DOMContentLoaded", function () {
-        checkUserRole();
-    });
+    const loginForm = document.getElementById("loginForm");
+    if (!loginForm) return;
+    loginForm.addEventListener("submit", login);
+});
 
-    function checkUserRole() {
-
-        const userRole =
-            sessionStorage.getItem("role") ||
-            localStorage.getItem("role");
-
-        const adminBtn =
-            document.getElementById("adminReturnBtn");
-
-        if (
-            userRole &&
-            userRole.toLowerCase() === "admin"
-        ) {
-
-            adminBtn.classList.remove("d-none");
-
-        }
-
-    }
-//TULOY KO BUKAS(ERROR)
 async function login(event) {
-
     event.preventDefault();
 
-    const email = document.getElementById("emailInput").value;
+    if (!validateLogin()) return;
+
+    const email = document.getElementById("emailInput").value.trim();
     const password = document.getElementById("passwordInput").value;
+    const errorEl = document.getElementById("loginError");
 
     try {
-        const response = await fetch("../server/login/login.php", {
+        const response = await fetch(LOGIN_API, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ email, password })
         });
 
-        const text = await response.text();
-        console.log(text);
-    } catch (e) {
-        console.log(e);
-    }
-}
-//FOR LOGOUT
-async function logout() {
-    try {
-        await fetch(loginAPI, {
-            method: "DELETE"
-        });
+        if (!response.ok && response.status === 404) {
+            throw new Error("404: login.php not found at " + LOGIN_API);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+            if (errorEl) {
+                errorEl.textContent = result.message || "Invalid email or password.";
+                errorEl.classList.remove("hidden");
+            } else {
+                alert(result.message || "Invalid email or password.");
+            }
+            return;
+        }
+
+        // Persist role/id client-side so the dashboards can tailor the UI.
+        // The actual authorization check always happens server-side via the
+        // PHP session, so this is just for showing/hiding UI elements.
+        sessionStorage.setItem("role", result.data.role);
+        sessionStorage.setItem("emp_id", result.data.emp_id);
+        sessionStorage.setItem("firstname", result.data.firstname);
+
+        if (result.data.role === "admin") {
+            window.location.href = "../client/view/admin/admin_view.html";
+        } else {
+            window.location.href = "../client/view/employee/employee_view.html";
+        }
     } catch (error) {
-        console.log(error);
+        console.error("Login request failed:", error);
+        if (errorEl) {
+            errorEl.textContent = "Cannot connect to server. Open DevTools > Console for details.";
+            errorEl.classList.remove("hidden");
+        } else {
+            alert("Cannot connect to server. Open DevTools > Console for details.");
+        }
     }
-    window.location.href = "../../../../login/login.html";
 }

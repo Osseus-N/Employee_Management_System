@@ -2,85 +2,80 @@
 
 namespace login;
 
+use response\responseController;
 use service\SessionManager;
 
-class logInController
+class loginController extends responseController
 {
+    private loginService $loginService;
 
-    private logInService $service;
-    public function __construct(logInService $logInService){
-        $this->service = $logInService;
+    public function __construct(loginService $loginService)
+    {
+        $this->loginService = $loginService;
     }
 
-    public function handleRequest()
+    public function handleRequest(): void
     {
         SessionManager::init();
+        $method = $_SERVER['REQUEST_METHOD'];
 
-        switch ($_SERVER["REQUEST_METHOD"]) {
-
-            case "POST":
+        switch ($method) {
+            case 'POST':
                 $this->login();
                 break;
-
-            case "GET":
-                $this->showLoginForm();
+            case 'DELETE':
+                $this->logout();
                 break;
-
+            case 'GET':
+                $this->me();
+                break;
             default:
-                http_response_code(405);
-
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Method Not Allowed"
-                ]);
+                $this->error('Method not allowed', 405);
         }
     }
 
-    public function showLoginForm(){
-
-        if (isset($_SESSION['emp_id'])) {
-            echo json_encode([
-                'success'  => true,
-                'message'  => 'Already logged in.',
-                'redirect' => '/dashboard.php'
-            ]);
-            exit;
-        }
-
-        $this->login();
-    }
-    public function login()
+    public function login(): void
     {
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $email    = trim((string) ($data['email'] ?? ''));
+        $password = (string) ($data['password'] ?? '');
 
-        header('Content-Type: application/json');
+        if ($email === '' || $password === '') {
+            $this->error('Email and password are required.', 400);
+        }
 
-        $data = json_decode(file_get_contents("php://input"), true);
+        $account = $this->loginService->authenticate($email, $password);
 
-        $password = $data['password'] ?? '';
-        $email = $data['email'] ?? '';
+        if (!$account) {
+            $this->error('Invalid email or password.', 401);
+        }
 
-        $user = $this->service->authenticateAccount($email, $password);
+        SessionManager::login((int) $account['emp_id'], $account['acc_role'], $account['acc_email']);
 
-        if ($user) {
-
-            SessionManager::setUserSession(
-                $user['emp_id'],
-                $user['emp_firstname'],
-                $user['emp_position']
-            );
-
-            echo json_encode([
-                "success" => true,
-                "message" => "Logged in successfully",
-                "role" => $user["role"],
-                "data" => $user
-            ]);
-            exit;
-        } else http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Invalid email or password'
+        $this->success('Login successful', [
+            'emp_id'    => (int) $account['emp_id'],
+            'role'      => $account['acc_role'],
+            'email'     => $account['acc_email'],
+            'firstname' => $account['emp_firstname'],
+            'lastname'  => $account['emp_lastname'],
         ]);
-        exit;
+    }
+
+    public function logout(): void
+    {
+        SessionManager::destroySession();
+        $this->success('Logged out successfully');
+    }
+
+    public function me(): void
+    {
+        if (!SessionManager::isLoggedIn()) {
+            $this->error('Not logged in', 401);
+        }
+
+        $this->success('Session active', [
+            'emp_id' => SessionManager::currentEmpId(),
+            'role'   => SessionManager::currentRole(),
+        ]);
     }
 }

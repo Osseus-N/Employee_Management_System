@@ -1,16 +1,15 @@
-//REQUIRED FIELD
+// REQUIRED FIELD
 function isEmpty(value) {
     return value.trim() === "";
 }
 
-//VALIDATION FOR EMAIL
+// EMAIL FORMAT
 function validateEmail(email) {
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return pattern.test(email);
-
 }
 
-//VALIDATION FOR PASS
+// PASSWORD LENGTH
 function validatePassword(password) {
     if (password.length < 6) {
         alert("Password must be at least 6 characters.");
@@ -19,10 +18,10 @@ function validatePassword(password) {
     return true;
 }
 
-//PHONE NUMBER
+// PHONE NUMBER (11 digits, e.g. PH mobile format)
 function validatePhone(phone) {
+    if (!phone) return true; // optional field
     const pattern = /^[0-9]{11}$/;
-
     if (!pattern.test(phone)) {
         alert("Phone number must be 11 digits.");
         return false;
@@ -30,23 +29,19 @@ function validatePhone(phone) {
     return true;
 }
 
-//HOURLY RATE
+// HOURLY RATE
 function validateRate(rate) {
-    if (rate == "" || isNaN(rate) || Number(rate) <= 0) {
+    if (rate === "" || isNaN(rate) || Number(rate) <= 0) {
         alert("Invalid hourly rate.");
         return false;
     }
     return true;
 }
 
-//LOGIN FORM
+// LOGIN FORM
 function validateLogin() {
-
-    const email =
-        document.getElementById("emailInput").value;
-
-    const password =
-        document.getElementById("passwordInput").value;
+    const email = document.getElementById("emailInput").value;
+    const password = document.getElementById("passwordInput").value;
 
     if (isEmpty(email)) {
         alert("Email is required.");
@@ -62,19 +57,15 @@ function validateLogin() {
     return true;
 }
 
-//FORM OF EMPLOYEE
+// EMPLOYEE CREATE/EDIT FORM (admin dashboard)
 function validateEmployee() {
-    const firstname =
-        document.getElementById("firstname").value;
-
-    const lastname =
-        document.getElementById("lastname").value;
-
-    const position =
-        document.getElementById("position").value;
-
-    const rate =
-        document.getElementById("hourly_rate").value;
+    const firstname = document.getElementById("firstName").value;
+    const lastname = document.getElementById("lastName").value;
+    const position = document.getElementById("position").value;
+    const rate = document.getElementById("hourlyRate").value;
+    const contact = document.getElementById("contactNumber")
+        ? document.getElementById("contactNumber").value
+        : "";
 
     if (isEmpty(firstname)) {
         alert("First name is required.");
@@ -91,85 +82,44 @@ function validateEmployee() {
     if (!validateRate(rate)) {
         return false;
     }
-    return true;
-}
-
-//PROFILE FORM
-function validateProfile() {
-    return validateEmployee();
-}
-
-//SEARCH VALIDATION
-function validateSearch(value) {
-    if (value.trim() == "") {
+    if (!validatePhone(contact)) {
         return false;
     }
     return true;
 }
 
-//DATE VALIDATION
-function validateDate(date) {
-    if (date == "") {
-        alert("Please select a date.");
-        return false;
-    }
-    return true;
-}
-
-//DELETE CONFIRMATION
+// DELETE CONFIRMATION
 function confirmDelete() {
-
     return confirm("Are you sure you want to delete this employee?");
-
 }
 
-//CLEANING FORM
-function clearInputs() {
-    const inputs =
-        document.querySelectorAll("input");
-    inputs.forEach(input => {
-        if (input.type != "button" &&
-            input.type != "submit") {
-            input.value = "";
-        }
-    });
-}
-
-//PANG NUMBER
+// RESTRICT TO NUMBERS ONLY
 function numbersOnly(event) {
     const key = event.key;
-    if (!/[0-9]/.test(key) &&
-        key !== "Backspace" &&
-        key !== "Delete") {
+    if (!/[0-9]/.test(key) && key !== "Backspace" && key !== "Delete" && key !== "Tab") {
         event.preventDefault();
     }
 }
 
-//PANG LETTER
+// RESTRICT TO LETTERS ONLY
 function lettersOnly(event) {
     const key = event.key;
-    if (!/^[a-zA-Z ]$/.test(key) &&
-        key !== "Backspace" &&
-        key !== "Delete") {
+    if (!/^[a-zA-Z ]$/.test(key) && key !== "Backspace" && key !== "Delete" && key !== "Tab") {
         event.preventDefault();
     }
 }
 
-//AUTOMATIC EVENT
+// AUTO-ATTACH INPUT RESTRICTIONS ON WHATEVER PAGE IS LOADED
 window.addEventListener("load", function () {
-    const rate =
-        document.getElementById("hourly_rate");
-    if (rate) {
-        rate.addEventListener("keypress", numbersOnly);
-    }
-    const firstname =
-        document.getElementById("firstname");
-    if (firstname) {
-        firstname.addEventListener("keypress", lettersOnly);
-    }
-    const lastname =
-        document.getElementById("lastname");
-    if (lastname) {
-        lastname.addEventListener("keypress", lettersOnly);
-    }
+    const rate = document.getElementById("hourlyRate");
+    if (rate) rate.addEventListener("keypress", numbersOnly);
+
+    const firstname = document.getElementById("firstName");
+    if (firstname) firstname.addEventListener("keypress", lettersOnly);
+
+    const lastname = document.getElementById("lastName");
+    if (lastname) lastname.addEventListener("keypress", lettersOnly);
+
+    const contact = document.getElementById("contactNumber");
+    if (contact) contact.addEventListener("keypress", numbersOnly);
 });

@@ -1,111 +1,60 @@
-const attendanceAPI = "../../../server/attendance/attendanceController.php";
-let attendances = [];
+const ATTENDANCE_SELF_API = "../../../server/router/attendance.php";
 
-document.addEventListener("DOMContentLoaded", initializeAttendance);
-
-function initializeAttendance() {
-    bindAttendanceEvents();
-    loadAttendance();
-}
-
-function bindAttendanceEvents() {
-
-    document.getElementById("btnRefreshAttendance")
-        ?.addEventListener("click", loadAttendance);
-
-    document.getElementById("attendanceSearch")
-        ?.addEventListener("input", searchAttendance);
-
-    document.getElementById("attendanceDateFilter")
-        ?.addEventListener("change", filterAttendance);
-
-}
-
-async function loadAttendance() {
+async function loadMyAttendance() {
+    const table = document.getElementById("attendanceTableBody");
+    if (!table) return;
 
     try {
-
-        const response = await fetch(attendanceAPI);
-
+        const response = await fetch(ATTENDANCE_SELF_API, { credentials: "same-origin" });
         const result = await response.json();
+        table.innerHTML = "";
 
-        if (!result.success) {
-            attendances = [];
-            renderAttendance([]);
+        if (!result.success || result.data.length === 0) {
+            table.innerHTML = "<tr><td colspan='4' class='text-center py-6 text-gray-400'>No attendance records yet.</td></tr>";
             return;
         }
-        attendances = result.data;
-        renderAttendance(attendances);
-    }
-    catch (error) {
+
+        result.data.forEach(att => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="px-4 py-3">${att.att_work_date}</td>
+                <td class="px-4 py-3">${att.att_clock_in}</td>
+                <td class="px-4 py-3">${att.att_clock_out ?? "—"}</td>
+                <td class="px-4 py-3">${att.att_total_hours ?? "—"}</td>
+            `;
+            table.appendChild(row);
+        });
+    } catch (error) {
         console.error(error);
-
     }
-
 }
 
-function renderAttendance(data) {
-    const table = document.getElementById("attendanceTableBody");
-    table.innerHTML = "";
-
-    if (!data.length) {
-        table.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center py-6">
-                    No attendance records found.
-                </td>
-            </tr>
-        `;
-        return;
-
+async function clockIn() {
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, {
+            method: "POST",
+            credentials: "same-origin"
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) loadMyAttendance();
+    } catch (error) {
+        console.error(error);
+        alert("Unable to clock in.");
     }
-
-    data.forEach(record =>
-        table.insertAdjacentHTML("beforeend", createAttendanceRow(record))
-    );
-
 }
 
-function createAttendanceRow(record) {
-
-    return `
-    <tr class="border-b hover:bg-slate-50">
-        <td class="p-3">${record.att_id}</td>
-        <td class="p-3">${record.emp_firstname} ${record.emp_lastname}</td>
-        <td class="p-3">${record.att_date}</td>
-        <td class="p-3">${record.time_in ?? "-"}</td>
-        <td class="p-3">${record.time_out ?? "-"}</td>
-        <td class="p-3">${record.hours_worked ?? 0}</td>
-        <td class="p-3">${record.att_status}</td>
-    </tr>
-    `;
-
-}
-
-function searchAttendance() {
-
-    const keyword = document.getElementById("attendanceSearch")
-        .value
-        .toLowerCase();
-
-    const filtered = attendances.filter(record =>
-        `${record.emp_firstname} ${record.emp_lastname}`
-            .toLowerCase()
-            .includes(keyword)
-    );
-    renderAttendance(filtered);
-}
-
-function filterAttendance() {
-    const date = document.getElementById("attendanceDateFilter").value;
-
-    if (!date) {
-        renderAttendance(attendances);
-        return;
-
+async function clockOut() {
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, {
+            method: "PUT",
+            credentials: "same-origin"
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) loadMyAttendance();
+    } catch (error) {
+        console.error(error);
+        alert("Unable to clock out.");
     }
-    renderAttendance(
-        attendances.filter(record => record.att_date === date)
-    );
-
 }

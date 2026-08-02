@@ -2,165 +2,58 @@
 
 namespace admin;
 
-use Database;
-use model\Employee;
+use database\Database;
+use PDO;
 
 class adminRepository
 {
-    private Database $db;
+    private PDO $db;
 
-    public function __construct(Database $db)
+    public function __construct()
     {
-        $this->db = $db;
-        $this->db->connect();
+        $this->db = Database::getConnection();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get All Employees
-    |--------------------------------------------------------------------------
-    */
-
-    public function getAllEmployees(): array
+    public function getDashboardCounts(): array
     {
-        $result = $this->db->select("employees");
+        $stmt = $this->db->query("SELECT emp_status, COUNT(*) as total FROM employees GROUP BY emp_status");
 
-        $employees = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $employees[] = $row;
+        $counts = ['Active' => 0, 'Inactive' => 0, 'Terminated' => 0];
+        foreach ($stmt->fetchAll() as $row) {
+            $counts[$row['emp_status']] = (int) $row['total'];
         }
+        $counts['Total'] = $counts['Active'] + $counts['Inactive'] + $counts['Terminated'];
 
-        return $employees;
+        return $counts;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get One Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function getEmployeeById(int $empId): ?array
+    public function emailExists(string $email): bool
     {
-        $result = $this->db->select(
-            "employees",
-            "*",
-            [
-                "emp_id" => $empId
-            ]
-        );
+        $stmt = $this->db->prepare("SELECT acc_id FROM accounts WHERE acc_email = :email");
+        $stmt->execute(['email' => $email]);
 
-        if ($result && $result->num_rows > 0) {
-            return $result->fetch_assoc();
-        }
-
-        return null;
+        return (bool) $stmt->fetch();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function createEmployee(Employee $employee): bool
+    public function createAccount(int $empId, string $email, string $password, string $role): bool
     {
-        return $this->db->insert(
-            "employees",
-            [
-                "emp_firstname"      => $employee->getEmpFirstname(),
-                "emp_lastname"       => $employee->getEmpLastname(),
-                "emp_gender"         => $employee->getEmpGender(),
-                "emp_date_of_birth"  => $employee->getEmpDateOfBirth(),
-                "emp_contact_number" => $employee->getEmpContactNumber(),
-                "emp_position"       => $employee->getEmpPosition(),
-                "emp_hourly_rate"    => $employee->getEmpHourlyRate(),
-                "emp_status"         => $employee->getEmpStatus()
-            ]
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare(
+            "INSERT INTO accounts (emp_id, acc_email, acc_role, acc_password)
+             VALUES (:emp_id, :email, :role, :password)"
         );
+
+        return $stmt->execute([
+            'emp_id'   => $empId,
+            'email'    => $email,
+            'role'     => $role,
+            'password' => $hash,
+        ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function updateEmployee(
-        int $empId,
-        array $data
-    ): bool {
-
-        return $this->db->update(
-            "employees",
-            $data,
-            [
-                "emp_id" => $empId
-            ]
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function deleteEmployee(
-        int $empId
-    ): bool {
-
-        return $this->db->delete(
-            "employees",
-            [
-                "emp_id" => $empId
-            ]
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Search Employee
-    |--------------------------------------------------------------------------
-    */
-
-    public function searchEmployee(
-        string $keyword
-    ): array {
-
-        $employees = $this->getAllEmployees();
-
-        if (empty($keyword)) {
-            return $employees;
-        }
-
-        $keyword = strtolower(trim($keyword));
-
-        return array_values(array_filter(
-            $employees,
-            function ($employee) use ($keyword) {
-
-                return
-                    str_contains(
-                        strtolower($employee["emp_firstname"]),
-                        $keyword
-                    ) ||
-
-                    str_contains(
-                        strtolower($employee["emp_lastname"]),
-                        $keyword
-                    ) ||
-
-                    str_contains(
-                        strtolower($employee["emp_position"]),
-                        $keyword
-                    ) ||
-
-                    str_contains(
-                        strtolower($employee["emp_status"]),
-                        $keyword
-                    );
-            }
-        ));
+    public function deleteAccountForEmployee(int $empId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM accounts WHERE emp_id = :emp_id");
+        return $stmt->execute(['emp_id' => $empId]);
     }
 }

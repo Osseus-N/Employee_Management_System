@@ -2,111 +2,67 @@
 
 namespace model;
 
+/**
+ * Plain domain object for an employee record. Repositories build these
+ * (or plain arrays) from DB rows; services use validate() before writes.
+ */
 class Employee
 {
-    private ?int $empId;
-    private string $empFirstname;
-    private string $empLastname;
-    private string $empGender;
-    private ?string $empDateOfBirth;
-    private ?string $empContactNumber;
-    private string $empPosition;
-    private float $empHourlyRate;
-    private string $empStatus;
-    private ?string $empCreatedAt;
-
     public function __construct(
-        string $empFirstname,
-        string $empLastname,
-        string $empGender,
-        string $empPosition,
-        float $empHourlyRate = 0,
-        ?string $empDateOfBirth = null,
-        ?string $empContactNumber = null,
-        ?int $empId = null,
-        string $empStatus = "Active",
-        ?string $empCreatedAt = null
-    ){
-        $this->empFirstname = $empFirstname;
-        $this->empLastname = $empLastname;
-        $this->empGender = $empGender;
-        $this->empPosition = $empPosition;
-        $this->empHourlyRate = $empHourlyRate;
-        $this->empDateOfBirth = $empDateOfBirth;
-        $this->empContactNumber = $empContactNumber;
-        $this->empId = $empId;
-        $this->empStatus = $empStatus;
-        $this->empCreatedAt = $empCreatedAt;
+        public ?int $emp_id,
+        public string $emp_firstname,
+        public string $emp_lastname,
+        public string $emp_gender,
+        public string $emp_date_of_birth,
+        public ?string $emp_contact_number,
+        public string $emp_position,
+        public float $emp_hourly_rate,
+        public string $emp_status = 'Active'
+    ) {
     }
 
-    public function getEmpId(): ?int
+    public static function fromArray(array $data): self
     {
-        return $this->empId;
+        return new self(
+            isset($data['emp_id']) ? (int) $data['emp_id'] : null,
+            (string) ($data['emp_firstname'] ?? ''),
+            (string) ($data['emp_lastname'] ?? ''),
+            (string) ($data['emp_gender'] ?? ''),
+            (string) ($data['emp_date_of_birth'] ?? ''),
+            $data['emp_contact_number'] ?? null,
+            (string) ($data['emp_position'] ?? ''),
+            (float) ($data['emp_hourly_rate'] ?? 0),
+            (string) ($data['emp_status'] ?? 'Active')
+        );
     }
 
-    public function setEmpId(int $id): void
+    /** @return string[] list of validation error messages (empty = valid) */
+    public function validate(): array
     {
-        $this->empId = $id;
-    }
+        $errors = [];
 
-    public function getEmpFirstname(): string
-    {
-        return $this->empFirstname;
-    }
+        if (trim($this->emp_firstname) === '') {
+            $errors[] = 'First name is required.';
+        }
+        if (trim($this->emp_lastname) === '') {
+            $errors[] = 'Last name is required.';
+        }
+        if (!in_array($this->emp_gender, ['Male', 'Female', 'Other'], true)) {
+            $errors[] = 'Gender must be Male, Female, or Other.';
+        }
+        if (trim($this->emp_date_of_birth) === '') {
+            $errors[] = 'Date of birth is required.';
+        }
+        if (trim($this->emp_position) === '') {
+            $errors[] = 'Position is required.';
+        }
+        if ($this->emp_hourly_rate <= 0) {
+            $errors[] = 'Hourly rate must be greater than 0.';
+        }
+        if (!in_array($this->emp_status, ['Active', 'Inactive', 'Terminated'], true)) {
+            $errors[] = 'Status must be Active, Inactive, or Terminated.';
+        }
 
-    public function getEmpLastname(): string
-    {
-        return $this->empLastname;
-    }
-
-    public function getEmpGender(): string
-    {
-        return $this->empGender;
-    }
-
-    public function getEmpDateOfBirth(): ?string
-    {
-        return $this->empDateOfBirth;
-    }
-
-    public function getEmpContactNumber(): ?string
-    {
-        return $this->empContactNumber;
-    }
-
-    public function getEmpPosition(): string
-    {
-        return $this->empPosition;
-    }
-
-    public function getEmpHourlyRate(): float
-    {
-        return $this->empHourlyRate;
-    }
-
-    public function getEmpStatus(): string
-    {
-        return $this->empStatus;
-    }
-
-    public function getEmpCreatedAt(): ?string
-    {
-        return $this->empCreatedAt;
-    }
-
-    public function toArray(): array
-    {
-        return [
-            "emp_id"=>$this->empId,
-            "emp_firstname"=>$this->empFirstname,
-            "emp_lastname"=>$this->empLastname,
-            "emp_gender"=>$this->empGender,
-            "emp_date_of_birth"=>$this->empDateOfBirth,
-            "emp_contact_number"=>$this->empContactNumber,
-            "emp_position"=>$this->empPosition,
-            "emp_hourly_rate"=>$this->empHourlyRate,
-            "emp_status"=>$this->empStatus,
-            "emp_created_at"=>$this->empCreatedAt
-        ];
+        return $errors;
     }
 }

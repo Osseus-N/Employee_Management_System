@@ -1,227 +1,90 @@
-const employeeAPI = "../../../server/router/admin.php";
+const EMPLOYEE_API = "../../../server/router/employee.php";
+const LOGOUT_API = "../../../server/router/login.php";
 
-let employees = [];
-let selectedEmployee = null;
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    bindEmployeeEvents();
-
-    loadEmployees();
-
-});
-
-function bindEmployeeEvents(){
-
-    btnAddEmployee.onclick = openEmployeeModal;
-
-    btnCloseModal.onclick = closeEmployeeModal;
-
-    btnCancel.onclick = closeEmployeeModal;
-
-    employeeForm.addEventListener(
-        "submit",
-        saveEmployee
-    );
-
-    searchEmployee.addEventListener(
-        "input",
-        searchEmployees
-    );
-
-    statusFilter.addEventListener(
-        "change",
-        filterEmployees
-    );
-
+// ---------- ACCESS GUARD ----------
+if (!sessionStorage.getItem("role")) {
+    window.location.href = "../../../login/login.html";
 }
 
-async function loadEmployees(){
+async function logout() {
+    if (!confirm("Logout?")) return;
+    try {
+        await fetch(LOGOUT_API, { method: "DELETE", credentials: "same-origin" });
+    } catch (error) {
+        console.error(error);
+    }
+    sessionStorage.clear();
+    window.location.href = "../../../login/login.html";
+}
 
-    try{
+document.addEventListener("DOMContentLoaded", function () {
+    const name = sessionStorage.getItem("firstname");
+    if (name) document.getElementById("welcomeGreeting").textContent = "Welcome, " + name;
 
-        const response = await fetch(employeeAPI);
+    // Admins can also view this page for themselves; show a shortcut back.
+    if (sessionStorage.getItem("role") === "admin") {
+        document.getElementById("adminReturnBtn").classList.remove("hidden");
+    }
 
+    loadProfile();
+    loadMyAttendance();
+    loadMyPayroll();
+
+    document.getElementById("profileForm").addEventListener("submit", saveProfile);
+    document.getElementById("btnMarkPresent").addEventListener("click", clockIn);
+    document.getElementById("btnClockOut").addEventListener("click", clockOut);
+});
+
+async function loadProfile() {
+    try {
+        const response = await fetch(EMPLOYEE_API, { credentials: "same-origin" });
         const result = await response.json();
 
-        employees = result.data || [];
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
 
-        renderEmployees(employees);
-
-    }
-
-    catch(error){
-
+        const emp = result.data;
+        document.getElementById("empFirstName").value = emp.emp_firstname;
+        document.getElementById("empLastName").value = emp.emp_lastname;
+        document.getElementById("empContact").value = emp.emp_contact_number ?? "";
+        document.getElementById("empPosition").textContent = emp.emp_position;
+        document.getElementById("empStatus").textContent = emp.emp_status;
+    } catch (error) {
         console.error(error);
-
+        alert("Cannot connect to server.");
     }
-
 }
 
-async function searchEmployees(){
-
-    const keyword = searchEmployee.value.trim();
-
-    if(keyword===""){
-
-        renderEmployees(employees);
-
-        return;
-
-    }
-
-    const response = await fetch(
-
-        employeeAPI + "?search=" + encodeURIComponent(keyword)
-
-    );
-
-    const result = await response.json();
-
-    renderEmployees(result.data || []);
-
-}
-
-function filterEmployees(){
-
-    const status = statusFilter.value;
-
-    if(status===""){
-
-        renderEmployees(employees);
-
-        return;
-
-    }
-
-    renderEmployees(
-
-        employees.filter(emp=>emp.emp_status===status)
-
-    );
-
-}
-
-async function saveEmployee(event){
-
+async function saveProfile(event) {
     event.preventDefault();
 
-    if(selectedEmployee){
+    const firstname = document.getElementById("empFirstName").value;
+    const lastname = document.getElementById("empLastName").value;
+    const contact = document.getElementById("empContact").value;
 
-        updateEmployee();
-
-    }
-
-    else{
-
-        addEmployee();
-
-    }
-
-}
-
-async function addEmployee(){
-
-    const response = await fetch(employeeAPI,{
-
-        method:"POST",
-
-        headers:{
-            "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify(getEmployeeData())
-
-    });
-
-    const result = await response.json();
-
-    alert(result.message);
-
-    closeEmployeeModal();
-
-    loadEmployees();
-
-}
-
-async function updateEmployee(){
-
-    const response = await fetch(employeeAPI,{
-
-        method:"PUT",
-
-        headers:{
-            "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-
-            emp_id:selectedEmployee.emp_id,
-
-            ...getEmployeeData()
-
-        })
-
-    });
-
-    const result = await response.json();
-
-    alert(result.message);
-
-    closeEmployeeModal();
-
-    loadEmployees();
-
-}
-
-async function deleteEmployee(id){
-
-    if(!confirm("Delete employee?")){
-
+    if (isEmpty(firstname) || isEmpty(lastname)) {
+        alert("First and last name are required.");
         return;
-
     }
+    if (!validatePhone(contact)) return;
 
-    const response = await fetch(employeeAPI,{
-
-        method:"DELETE",
-
-        headers:{
-            "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-
-            emp_id:id
-
-        })
-
-    });
-
-    const result = await response.json();
-
-    alert(result.message);
-
-    loadEmployees();
-
+    try {
+        const response = await fetch(EMPLOYEE_API, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+                emp_firstname: firstname,
+                emp_lastname: lastname,
+                emp_contact_number: contact
+            })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        console.error(error);
+        alert("Unable to update profile.");
+    }
 }
-
-document.addEventListener("click",e=>{
-
-    const edit=e.target.closest(".btn-edit");
-
-    if(edit){
-
-        selectEmployee(edit.dataset.id);
-
-    }
-
-    const del=e.target.closest(".btn-delete");
-
-    if(del){
-
-        deleteEmployee(del.dataset.id);
-
-    }
-
-});

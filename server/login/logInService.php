@@ -2,36 +2,37 @@
 
 namespace login;
 
-use employee\employeeRepository;
-
-class logInService
+class loginService
 {
-    private logInRepository $logInRepository;
-    private EmployeeRepository $employeeRepository;
-    public function __construct(logInRepository $logInRepository, employeeRepository $employeeRepository){
-        $this->logInRepository = $logInRepository;
-        $this->employeeRepository = $employeeRepository;
+    private loginRepository $repository;
+
+    public function __construct(loginRepository $repository)
+    {
+        $this->repository = $repository;
     }
-    public function authenticateAccount(mixed $email, mixed $password){
 
-        $acc = $this->logInRepository->isAccountExist($email);
+    /**
+     * Returns the account row (password stripped) on success, or null on
+     * invalid credentials / inactive account.
+     */
+    public function authenticate(string $email, string $password): ?array
+    {
+        $account = $this->repository->findByEmail($email);
 
-        if($acc){
-
-            $user =$this->employeeRepository->getEmployee($acc['emp_id']);
-
-            if(!password_verify($password, $user['password'])){
-                return null;
-            }
-
-            $user['role'] = $acc['acc_role'];
-            unset($user['password']);
-
-            return $user;
+        if (!$account) {
+            return null;
         }
-        return null;
+
+        if (!password_verify($password, $account['acc_password'])) {
+            return null;
+        }
+
+        if ($account['emp_status'] !== 'Active') {
+            return null;
+        }
+
+        unset($account['acc_password']);
+
+        return $account;
     }
-
-
-
 }

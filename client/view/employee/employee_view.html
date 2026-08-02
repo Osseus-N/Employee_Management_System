@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Self Service Portal</title>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../style/style.css">
 
-    <!-- Validation -->
     <script src="../script/login/validation.js"></script>
-
-    <!-- Employee JS -->
+    <script src="../script/attendance.js"></script>
+    <script src="../script/payroll.js"></script>
     <script src="../script/employee.js" defer></script>
 </head>
 
@@ -19,29 +18,23 @@
 
 <!-- Header -->
 <header class="bg-slate-800 shadow-lg">
-    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
-
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center flex-wrap gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-white">
-                Employee Self Service Portal
-            </h1>
-            <p class="text-slate-300">
-                Payroll & Attendance
-            </p>
+            <h1 class="text-3xl font-bold text-white">Employee Self Service Portal</h1>
+            <p class="text-slate-300">Payroll &amp; Attendance</p>
         </div>
 
         <div class="flex items-center gap-4">
-            <span id="welcomeGreeting" class="text-white font-semibold">
-                Welcome Employee
-            </span>
-
-            <a id="adminReturnBtn"
-               href="../admin/admin_view.html"
+            <span id="welcomeGreeting" class="text-white font-semibold">Welcome</span>
+            <a id="adminReturnBtn" href="../admin/admin_view.html"
                class="hidden bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl transition">
                 Admin Dashboard
             </a>
+            <button onclick="logout()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl transition">
+                Logout
+            </button>
         </div>
-
     </div>
 </header>
 
@@ -52,238 +45,116 @@
 
         <!-- Profile -->
         <div class="lg:col-span-1">
-
             <div class="bg-white rounded-2xl shadow-xl p-8">
-
-                <h2 class="text-2xl font-bold text-slate-700 mb-6">
-                    My Profile
-                </h2>
+                <h2 class="text-2xl font-bold text-slate-700 mb-6">My Profile</h2>
 
                 <form id="profileForm">
-
                     <div class="space-y-5">
-                        <!-- First Name -->
                         <div>
-                            <label for="empFirstName" class="block text-sm font-medium text-gray-700 mb-2">
-                                First Name
-                            </label>
-                            <input type="text"
-                                   id="empFirstName"
-                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   required>
+                            <label for="empFirstName" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                            <input type="text" id="empFirstName" required
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
-                        <!-- Last Name -->
                         <div>
-                            <label for="empLastName" class="block text-sm font-medium text-gray-700 mb-2">
-                                Last Name
-                            </label>
-                            <input type="text"
-                                   id="empLastName"
-                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   required>
+                            <label for="empLastName" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                            <input type="text" id="empLastName" required
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
-                        <!-- Email -->
                         <div>
-                            <label for="empEmail" class="block text-sm font-medium text-gray-700 mb-2">
-                                Email Address
-                            </label>
-                            <input type="email"
-                                   id="empEmail"
-                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   required>
+                            <label for="empContact" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="text" id="empContact" maxlength="11"
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
-                        <!-- Phone -->
-                        <div>
-                            <label for="empPhone" class="block text-sm font-medium text-gray-700 mb-2">
-                                Phone Number
-                            </label>
-                            <input type="text"
-                                   id="empPhone"
-                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 pt-2 border-t">
+                            <div>
+                                <p class="text-gray-400">Position</p>
+                                <p id="empPosition" class="font-medium text-slate-700">—</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Status</p>
+                                <p id="empStatus" class="font-medium text-slate-700">—</p>
+                            </div>
                         </div>
 
-                        <!-- Address -->
-                        <div>
-                            <label for="empAddress" class="block text-sm font-medium text-gray-700 mb-2">
-                                Home Address
-                            </label>
-                            <textarea id="empAddress"
-                                      rows="3"
-                                      class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                        </div>
-
-                        <!-- Save Button -->
                         <button type="submit"
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
                             Save Changes
                         </button>
-            </div>
+                    </div>
                 </form>
-
             </div>
-
         </div>
 
         <!-- Right Side -->
         <div class="lg:col-span-2 space-y-8">
+
             <!-- Attendance Card -->
             <div class="bg-white rounded-2xl shadow-xl p-8">
-
-                <div class="flex justify-between items-center mb-6">
-
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-700">
-                            Attendance Log
-                        </h2>
-                        <p class="text-gray-500 text-sm">
-                            Track your daily attendance
-                        </p>
+                        <h2 class="text-2xl font-bold text-slate-700">Attendance Log</h2>
+                        <p class="text-gray-500 text-sm">Track your daily attendance</p>
                     </div>
-
-                    <button
-                            id="btnMarkPresent"
-                            class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition">
-                        Mark Present
-                    </button>
-
+                    <div class="flex gap-3">
+                        <button id="btnMarkPresent"
+                                class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition">
+                            Clock In
+                        </button>
+                        <button id="btnClockOut"
+                                class="bg-slate-600 hover:bg-slate-700 text-white px-5 py-3 rounded-xl font-semibold transition">
+                            Clock Out
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Attendance Legend -->
-                <div class="flex items-center gap-4 mb-6 text-sm text-gray-600">
-
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded bg-gray-300"></div>
-                        <span>Absent</span>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded bg-green-500"></div>
-                        <span>Present</span>
-                    </div>
-
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Clock In</th>
+                            <th class="px-4 py-3 text-left">Clock Out</th>
+                            <th class="px-4 py-3 text-left">Hours</th>
+                        </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody" class="divide-y divide-gray-200">
+                        <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- Attendance Grid -->
-                <div
-                        id="attendanceGrid"
-                        class="grid grid-cols-7 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-7 xl:grid-cols-10 gap-2">
-
-                    <!-- Example Boxes -->
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-gray-300"></div>
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-gray-300"></div>
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-gray-300"></div>
-                    <div class="h-10 rounded-lg bg-green-500"></div>
-                    <div class="h-10 rounded-lg bg-gray-300"></div>
-
-                    <!-- employee.js can replace these dynamically -->
-
-                </div>
-
             </div>
 
             <!-- Payroll Card -->
             <div class="bg-white rounded-2xl shadow-xl p-8">
-
                 <div class="mb-6">
-
-                    <h2 class="text-2xl font-bold text-slate-700">
-                        Payroll History
-                    </h2>
-
-                    <p class="text-gray-500 text-sm">
-                        View your salary records
-                    </p>
-
+                    <h2 class="text-2xl font-bold text-slate-700">Payroll History</h2>
+                    <p class="text-gray-500 text-sm">View your salary records</p>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-700">
-                    Payroll History
-                </h2>
 
-                <p class="text-gray-500 text-sm">
-                    View all of your payroll records.
-                </p>
-
-            </div>
-
-            <div class="overflow-x-auto rounded-xl border border-gray-200">
-
-                <table class="min-w-full">
-
-                    <thead class="bg-slate-800 text-white">
-
-                    <tr>
-
-                        <th class="px-5 py-3 text-left">Pay Period</th>
-
-                        <th class="px-5 py-3 text-left">Hours Worked</th>
-
-                        <th class="px-5 py-3 text-left">Gross Pay</th>
-
-                        <th class="px-5 py-3 text-left">Net Pay</th>
-
-                        <th class="px-5 py-3 text-center">Action</th>
-
-                    </tr>
-
-                    </thead>
-
-                    <tbody id="payrollTableBody" class="divide-y divide-gray-200">
-
-                    <!-- Sample Row -->
-
-                    <tr class="hover:bg-gray-50">
-
-                        <td class="px-5 py-4">
-                            July 1 - July 15
-                        </td>
-
-                        <td class="px-5 py-4">
-                            80 hrs
-                        </td>
-
-                        <td class="px-5 py-4">
-                            ₱12,000
-                        </td>
-
-                        <td class="px-5 py-4">
-                            ₱11,250
-                        </td>
-
-                        <td class="px-5 py-4 text-center">
-
-                            <button
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-
-                                View
-
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                    <!-- employee.js will add more payroll records -->
-
-                    </tbody>
-
-                </table>
-
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="min-w-full">
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Pay Period</th>
+                            <th class="px-5 py-3 text-left">Hours Worked</th>
+                            <th class="px-5 py-3 text-left">Amount</th>
+                            <th class="px-5 py-3 text-left">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="payrollTableBody" class="divide-y divide-gray-200">
+                        <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
-
     </div>
 
 </main>
 
 </body>
-
 </html>
