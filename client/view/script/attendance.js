@@ -1,5 +1,6 @@
 const ATTENDANCE_SELF_API = "../../../server/router/attendance.php";
 
+//Para makita attendance
 async function loadMyAttendance() {
     const table = document.getElementById("attendanceTableBody");
     if (!table) return;
@@ -29,6 +30,7 @@ async function loadMyAttendance() {
     }
 }
 
+//Papasok
 async function clockIn() {
     try {
         const response = await fetch(ATTENDANCE_SELF_API, {
@@ -44,6 +46,7 @@ async function clockIn() {
     }
 }
 
+//Palabas
 async function clockOut() {
     try {
         const response = await fetch(ATTENDANCE_SELF_API, {

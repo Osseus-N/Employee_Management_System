@@ -2,10 +2,6 @@
 
 namespace model;
 
-/**
- * Plain domain object for an employee record. Repositories build these
- * (or plain arrays) from DB rows; services use validate() before writes.
- */
 class Employee
 {
     public function __construct(

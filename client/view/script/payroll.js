@@ -1,5 +1,6 @@
 const PAYROLL_SELF_API = "../../../server/router/payroll.php";
 
+//Para lang sa status
 function payStatusBadge(status) {
     const colors = {
         Pending: "bg-yellow-100 text-yellow-700",
@@ -9,6 +10,7 @@ function payStatusBadge(status) {
     return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${colors[status] || ""}">${status}</span>`;
 }
 
+//Pang load ng Payroll
 async function loadMyPayroll() {
     const table = document.getElementById("payrollTableBody");
     if (!table) return;

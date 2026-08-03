@@ -18,7 +18,7 @@ function validatePassword(password) {
     return true;
 }
 
-// PHONE NUMBER (11 digits, e.g. PH mobile format)
+// PHONE NUMBER (11 digits)
 function validatePhone(phone) {
     if (!phone) return true; // optional field
     const pattern = /^[0-9]{11}$/;
@@ -88,12 +88,12 @@ function validateEmployee() {
     return true;
 }
 
-// DELETE CONFIRMATION
+//Confirmation lang para sa delete
 function confirmDelete() {
     return confirm("Are you sure you want to delete this employee?");
 }
 
-// RESTRICT TO NUMBERS ONLY
+// Dapat Number lang
 function numbersOnly(event) {
     const key = event.key;
     if (!/[0-9]/.test(key) && key !== "Backspace" && key !== "Delete" && key !== "Tab") {
@@ -101,7 +101,7 @@ function numbersOnly(event) {
     }
 }
 
-// RESTRICT TO LETTERS ONLY
+// Dapat Letter lang
 function lettersOnly(event) {
     const key = event.key;
     if (!/^[a-zA-Z ]$/.test(key) && key !== "Backspace" && key !== "Delete" && key !== "Tab") {

@@ -1,18 +1,10 @@
+//Pang One Time Setup para sa admin para ma access yung login
 <?php
-/**
- * ONE-TIME SETUP SCRIPT.
- * Visit this file once in your browser (e.g. http://localhost:8000/setup_admin.php)
- * to create the very first admin employee + login account.
- * DELETE THIS FILE after you've used it — it has no auth check of its own.
- */
-
 require_once __DIR__ . '/server/database/database.php';
 
 use database\Database;
 
 $db = Database::getConnection();
-
-// Edit these before running if you want different seed values.
 $firstname = 'System';
 $lastname  = 'Admin';
 $email     = 'admin@company.com';

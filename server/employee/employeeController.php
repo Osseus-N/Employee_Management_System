@@ -5,11 +5,6 @@ namespace employee;
 use response\responseController;
 use service\SessionManager;
 
-/**
- * Self-service endpoint: a logged-in employee (or admin) can view/edit
- * only THEIR OWN record. Full CRUD over all employees lives in
- * admin\adminController.
- */
 class employeeController extends responseController
 {
     private employeeService $employeeService;
@@ -63,8 +58,6 @@ class employeeController extends responseController
             $this->error('Employee not found', 404);
         }
 
-        // Self-service employees may only change contact info, not their
-        // own position, rate, or status.
         $data['emp_firstname']      = $data['emp_firstname'] ?? $existing['emp_firstname'];
         $data['emp_lastname']       = $data['emp_lastname'] ?? $existing['emp_lastname'];
         $data['emp_gender']         = $existing['emp_gender'];

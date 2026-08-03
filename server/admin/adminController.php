@@ -6,10 +6,6 @@ use employee\employeeService;
 use response\responseController;
 use service\SessionManager;
 
-/**
- * Admin-only: full CRUD over every employee record (and their linked login
- * account), plus dashboard counts. Every branch requires SessionManager::isAdmin().
- */
 class adminController extends responseController
 {
     private adminService $adminService;
@@ -87,12 +83,6 @@ class adminController extends responseController
         $this->success('Search results', $employees);
     }
 
-    /**
-     * Creates the employee record AND their login account in one call.
-     * Expects data to include: emp_firstname, emp_lastname, emp_gender,
-     * emp_date_of_birth, emp_position, emp_hourly_rate, emp_contact_number,
-     * plus login fields: acc_email, acc_password, acc_role (admin|employee).
-     */
     public function createEmployee(array $data): void
     {
         $email = trim((string) ($data['acc_email'] ?? ''));
@@ -119,8 +109,6 @@ class adminController extends responseController
         $accountCreated = $this->adminService->createAccount($empId, $email, $password, $role);
 
         if (!$accountCreated) {
-            // Roll back the employee record so we don't leave an orphan
-            // employee with no way to log in.
             $this->employeeService->deleteEmployee($empId);
             $this->error('Employee record created but login account failed — rolled back. Try again.', 500);
         }
@@ -150,9 +138,6 @@ class adminController extends responseController
         }
 
         $empId = (int) $data['emp_id'];
-
-        // accounts.emp_id has ON DELETE CASCADE, so this isn't strictly
-        // necessary, but we do it explicitly for clarity / DB-agnostic safety.
         $this->adminService->deleteAccountForEmployee($empId);
         $isDeleted = $this->employeeService->deleteEmployee($empId);
 

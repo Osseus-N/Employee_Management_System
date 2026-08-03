@@ -1,5 +1,3 @@
-// This file is only ever loaded from /login/login.html, so its relative
-// path depth to the project root is fixed: one folder up.
 const LOGIN_API = "../server/router/login.php";
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -8,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loginForm.addEventListener("submit", login);
 });
 
+//Pang access kung meron na yung tinayp ni user sa database
 async function login(event) {
     event.preventDefault();
 
@@ -41,9 +40,7 @@ async function login(event) {
             return;
         }
 
-        // Persist role/id client-side so the dashboards can tailor the UI.
-        // The actual authorization check always happens server-side via the
-        // PHP session, so this is just for showing/hiding UI elements.
+        //Showing & Hiding UI
         sessionStorage.setItem("role", result.data.role);
         sessionStorage.setItem("emp_id", result.data.emp_id);
         sessionStorage.setItem("firstname", result.data.firstname);

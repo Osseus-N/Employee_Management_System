@@ -4,11 +4,7 @@ namespace response;
 
 class responseController
 {
-    /**
-     * Send a JSON success response and STOP execution.
-     * (The original version kept running after calling this, which meant
-     * error() often fired right after success() and corrupted the response.)
-     */
+
     protected function success(string $message, $data = [], int $code = 200): void
     {
         http_response_code($code);

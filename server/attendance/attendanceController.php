@@ -42,7 +42,6 @@ class attendanceController extends responseController
 
     public function getAttendance(): void
     {
-        // Admin can view any employee's log via ?emp_id=, or everyone's if omitted.
         if (SessionManager::isAdmin() && empty($_GET['emp_id'])) {
             $this->success('Attendance retrieved successfully', $this->attendanceService->getAll());
         }

@@ -6,7 +6,7 @@ const LOGOUT_API = "../../../server/router/login.php";
 let employees = [];
 let selectedID = null;
 
-// ---------- ACCESS GUARD ----------
+// Security shit pang Access Guard
 if (sessionStorage.getItem("role") !== "admin") {
     window.location.href = "../../../login/login.html";
 }
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("payrollForm").addEventListener("submit", processPayroll);
 });
 
-// ---------- EMPLOYEES ----------
+// LOAD OF EMPLOYEE
 async function loadEmployees() {
     try {
         const response = await fetch(ADMIN_API, { credentials: "same-origin" });
@@ -55,6 +55,7 @@ async function loadEmployees() {
     }
 }
 
+//DISPLAY EMPLOYEE
 function displayEmployees(data) {
     const table = document.getElementById("employeeTableBody");
     table.innerHTML = "";
@@ -113,7 +114,7 @@ function searchEmployee() {
     displayEmployees(filtered);
 }
 
-// ---------- CREATE / EDIT FORM ----------
+// Creation of Form
 function showCreateForm() {
     selectedID = null;
     document.getElementById("formTitle").textContent = "Create New Employee";
@@ -124,6 +125,7 @@ function showCreateForm() {
     document.getElementById("createEmployeeForm").classList.remove("hidden");
 }
 
+//Pang Select ng Employee
 function selectEmployee(id) {
     selectedID = id;
     const emp = employees.find(e => e.emp_id == id);
@@ -166,6 +168,7 @@ function onSave() {
     }
 }
 
+//Pang Collect
 function collectEmployeeFormData() {
     return {
         emp_firstname: document.getElementById("firstName").value,
@@ -179,6 +182,7 @@ function collectEmployeeFormData() {
     };
 }
 
+//ADD EMPLOYEE
 async function addEmployee() {
     if (!validateEmployee()) return;
 
@@ -221,6 +225,7 @@ async function addEmployee() {
     }
 }
 
+//UPDATE EMPLOYEE
 async function updateEmployee() {
     if (!validateEmployee()) return;
 
@@ -245,6 +250,7 @@ async function updateEmployee() {
     }
 }
 
+//DELETE EMPLOYEE
 async function deleteEmployee(id) {
     if (!confirmDelete()) return;
 
@@ -264,7 +270,7 @@ async function deleteEmployee(id) {
     }
 }
 
-// ---------- ATTENDANCE (admin sees everyone) ----------
+// ATTENDANCE(Para makita ng admin lahat)
 async function loadAttendance() {
     const table = document.getElementById("attendanceTableBody");
     try {
@@ -293,7 +299,7 @@ async function loadAttendance() {
     }
 }
 
-// ---------- PAYROLL ----------
+// Payroll
 function populatePayrollDropdown() {
     const select = document.getElementById("payrollEmpId");
     select.innerHTML = employees
@@ -381,7 +387,7 @@ async function markPaid(payId) {
     }
 }
 
-// ---------- REFRESH ALL ----------
+// Pang Refresh
 async function refreshDashboard() {
     await loadEmployees();
     loadAttendance();

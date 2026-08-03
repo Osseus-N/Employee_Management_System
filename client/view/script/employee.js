@@ -1,7 +1,7 @@
 const EMPLOYEE_API = "../../../server/router/employee.php";
 const LOGOUT_API = "../../../server/router/login.php";
 
-// ---------- ACCESS GUARD ----------
+// Security shit din
 if (!sessionStorage.getItem("role")) {
     window.location.href = "../../../login/login.html";
 }
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const name = sessionStorage.getItem("firstname");
     if (name) document.getElementById("welcomeGreeting").textContent = "Welcome, " + name;
 
-    // Admins can also view this page for themselves; show a shortcut back.
+    //Para makita din ng admin yung kanya
     if (sessionStorage.getItem("role") === "admin") {
         document.getElementById("adminReturnBtn").classList.remove("hidden");
     }
@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnClockOut").addEventListener("click", clockOut);
 });
 
+//PROFILE
 async function loadProfile() {
     try {
         const response = await fetch(EMPLOYEE_API, { credentials: "same-origin" });
@@ -57,6 +58,7 @@ async function loadProfile() {
     }
 }
 
+//Save of profile
 async function saveProfile(event) {
     event.preventDefault();
 

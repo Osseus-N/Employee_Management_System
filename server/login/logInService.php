@@ -10,11 +10,6 @@ class loginService
     {
         $this->repository = $repository;
     }
-
-    /**
-     * Returns the account row (password stripped) on success, or null on
-     * invalid credentials / inactive account.
-     */
     public function authenticate(string $email, string $password): ?array
     {
         $account = $this->repository->findByEmail($email);
