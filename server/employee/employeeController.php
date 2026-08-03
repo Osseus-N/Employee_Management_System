@@ -2,76 +2,79 @@
 
 namespace employee;
 
-use response\responseController;
+use http\Encoding\Stream\Debrotli;
 use service\SessionManager;
 
-class employeeController extends responseController
+class employeeController
 {
-    private employeeService $employeeService;
-
-    public function __construct(employeeService $employeeService)
-    {
-        $this->employeeService = $employeeService;
+    private $service;
+    public function __construct(employeeService $service){
+    $this->service = $service;
     }
 
-    public function handleRequest(): void
-    {
+    public function handleRequest(){
+
         SessionManager::init();
 
-        if (!SessionManager::isLoggedIn()) {
-            $this->error('Please log in first.', 401);
-        }
-
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        switch ($method) {
-            case 'GET':
-                $this->getProfile();
+        switch($_SERVER["REQUEST_METHOD"]){
+            case "GET":
+                $this->handleEmployees();
                 break;
-            case 'PUT':
-                $this->updateProfile();
+            case "PUT":
+                $this->handleUpdate();
                 break;
-            default:
-                $this->error('Method not allowed', 405);
         }
     }
 
-    public function getProfile(): void
-    {
-        $empId = SessionManager::currentEmpId();
-        $employee = $this->employeeService->getEmployee($empId);
+    public function handleEmployees(){
 
-        if ($employee) {
-            $this->success('Profile retrieved', $employee);
+        SessionManager::isLoggedIn();
+
+        $emp_id = $_SESSION['emp_id'];
+
+        $user = $this->service->getEmployee($emp_id);
+
+        if($user){
+            echo json_encode([
+                "success" => true,
+                "message" => "Logged in successfully",
+                "data" => $user
+            ]);
         }
-
-        $this->error('Employee not found', 404);
+        else{
+            http_response_code(404);
+            echo json_encode([
+                "success" => false,
+                "message" => "Employee not found",
+            ]);
+        }
+        exit;
     }
 
-    public function updateProfile(): void
-    {
-        $empId = SessionManager::currentEmpId();
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+    public function handleUpdate(){
 
-        $existing = $this->employeeService->getEmployee($empId);
-        if (!$existing) {
-            $this->error('Employee not found', 404);
+        $data = json_decode(file_get_contents("php://input"));
+
+        SessionManager::isLoggedIn();
+
+        $emp_id = $_SESSION['emp_id'];
+
+        $user = $this->service->editEmployee($emp_id, $data);
+
+        if($user){
+            echo json_encode([
+                "success" => true,
+                "message" => "Employee updated successfully",
+                "data" => $user
+            ]);
+        }else{
+            http_response_code(404);
+            echo json_encode([
+                "success" => false,
+                "message" => "Employee not found",
+            ]);
         }
-
-        $data['emp_firstname']      = $data['emp_firstname'] ?? $existing['emp_firstname'];
-        $data['emp_lastname']       = $data['emp_lastname'] ?? $existing['emp_lastname'];
-        $data['emp_gender']         = $existing['emp_gender'];
-        $data['emp_date_of_birth']  = $existing['emp_date_of_birth'];
-        $data['emp_position']       = $existing['emp_position'];
-        $data['emp_hourly_rate']    = $existing['emp_hourly_rate'];
-        $data['emp_status']         = $existing['emp_status'];
-
-        [$ok, $error] = $this->employeeService->editEmployee($empId, $data);
-
-        if ($ok) {
-            $this->success('Profile updated successfully', ['emp_id' => $empId]);
-        }
-
-        $this->error($error ?? 'Failed to update profile', 400);
+        exit;
     }
+
 }

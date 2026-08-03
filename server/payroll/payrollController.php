@@ -2,99 +2,91 @@
 
 namespace payroll;
 
-use Exception;
-use response\responseController;
+use attendance\attendanceController;
+use attendance\attendanceService;
+use employee\employeeController;
 use service\SessionManager;
 
-class payrollController extends responseController
+class payrollController
 {
     private payrollService $payrollService;
+    private employeeController $employee;
+    private attendanceService $attendance;
 
-    public function __construct(payrollService $payrollService)
-    {
-        $this->payrollService = $payrollService;
+    public function __construct(PayrollService $payrollService, employeeController $employeeController,
+    attendanceService $attService){
+        
+    $this->payrollService = $payrollService;
+    $this->employee = $employeeController;
+    $this->attendance = $attService;
+
     }
+    public function handleRequest(){
 
-    public function handleRequest(): void
-    {
-        SessionManager::init();
-
-        if (!SessionManager::isLoggedIn()) {
-            $this->error('Please log in first.', 401);
-        }
-
-        $method = $_SERVER['REQUEST_METHOD'];
+        header("Content-type: application/json");
+        $method = $_SERVER["REQUEST_METHOD"];
 
         switch ($method) {
             case 'GET':
-                $this->getPayroll();
+                $this->getMonthlyPayroll();
                 break;
             case 'POST':
-                $this->processPayroll();
-                break;
-            case 'PUT':
-                $this->markPaid();
+                $this->payEmployee();
                 break;
             default:
-                $this->error('Method not allowed', 405);
+                http_response_code(405);
+                echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+                break;
         }
     }
+    private function getMonthlyPayroll(){
 
-    public function getPayroll(): void
-    {
-        if (SessionManager::isAdmin() && empty($_GET['emp_id'])) {
-            $this->success('Payroll retrieved successfully', $this->payrollService->getAll());
-        }
+        header("Content-type: application/json");
 
-        $empId = (!empty($_GET['emp_id']) && SessionManager::isAdmin())
-            ? (int) $_GET['emp_id']
-            : SessionManager::currentEmpId();
+        SessionManager::isLoggedIn();
 
-        $this->success('Payroll retrieved successfully', $this->payrollService->getByEmployee($empId));
+        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
+
+        $payroll = $this->service->getMonthlyPayroll($empId);
+
+        echo json_encode($payroll);
     }
+    private function payEmployee(){
 
-    public function processPayroll(): void
-    {
-        if (!SessionManager::isAdmin()) {
-            $this->error('Admin access required.', 403);
+        header("Content-type: application/json");
+
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!$data || !isset($data['emp_id'])) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid or missing parameters.'
+            ]);
+            exit;
         }
 
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $employee = $this->employee->getEmployee($data['emp_id']);
+        $presentDays = $this->attendance->presentAttendance($employee , $data['month'], $data['year']);
 
-        if (empty($data['emp_id']) || empty($data['pay_period_start']) || empty($data['pay_period_end'])) {
-            $this->error('emp_id, pay_period_start and pay_period_end are required.', 400);
+        $saved = $this->payrollService->payEmployee($data['emp_id'],$employee['hourly_rate'], $presentDays);
+
+        if ($saved) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Paid Employee Successfully',
+                'data' => [
+                    'emp_id' => $data['emp_id'],
+                    'status' => $data['status']
+                ]
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Database operation failed.'
+            ]);
         }
-
-        try {
-            $result = $this->payrollService->generatePayroll(
-                (int) $data['emp_id'],
-                $data['pay_period_start'],
-                $data['pay_period_end']
-            );
-            $this->success('Payroll processed successfully', $result, 201);
-        } catch (Exception $e) {
-            $this->error($e->getMessage(), 400);
-        }
-    }
-
-    public function markPaid(): void
-    {
-        if (!SessionManager::isAdmin()) {
-            $this->error('Admin access required.', 403);
-        }
-
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
-
-        if (empty($data['pay_id'])) {
-            $this->error('pay_id is required.', 400);
-        }
-
-        $updated = $this->payrollService->payEmployee((int) $data['pay_id']);
-
-        if ($updated) {
-            $this->success('Payroll marked as paid.');
-        }
-
-        $this->error('Failed to update payroll status.', 500);
     }
 }

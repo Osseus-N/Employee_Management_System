@@ -2,32 +2,53 @@
 
 namespace admin;
 
+use employee\employeeService;
+use model\Employee;
+
 class adminService
 {
-    private adminRepository $repository;
-
-    public function __construct(adminRepository $repository)
-    {
-        $this->repository = $repository;
+    private adminRepository $adminRepository;
+    public function __construct(adminRepository $adminRepository){
+    $this->adminRepository = $adminRepository;
     }
 
-    public function getDashboardCounts(): array
+    public function getAllEmployee(){
+
+    }
+    public function createEmployee(array $requestData)
     {
-        return $this->repository->getDashboardCounts();
+        // Create domain object
+        $employee = new Employee(
+            $requestData['firstname'],
+            $requestData['lastname'],
+            $requestData['gender'],
+            $requestData['position'],
+            (float) ($requestData['hourly_rate'] ?? 0.00),
+            $requestData['dob'] ?? null,
+            $requestData['contact'] ?? null
+        );
+
+        $email = $requestData['email'];
+        $password = $requestData['password']; // Raw password string from request
+
+        return $this->repository->registerEmployeeWithAccount($employee, $email, $password);
+    }
+    public function editEmployee(mixed $data)
+    {
+        $emp = $this->employeeService->getEmployee($data['emp_id']);
+
+        if($emp){
+
+        }
     }
 
-    public function emailExists(string $email): bool
+
+
+    public function deleteEmployee(mixed $emp_id)
     {
-        return $this->repository->emailExists($email);
     }
 
-    public function createAccount(int $empId, string $email, string $password, string $role): bool
+    public function searchEmployee(mixed $search)
     {
-        return $this->repository->createAccount($empId, $email, $password, $role);
-    }
-
-    public function deleteAccountForEmployee(int $empId): bool
-    {
-        return $this->repository->deleteAccountForEmployee($empId);
     }
 }

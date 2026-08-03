@@ -2,74 +2,72 @@
 
 namespace attendance;
 
-use Exception;
-use response\responseController;
 use service\SessionManager;
+use response\responseController; // Extend or import your response handler class
 
 class attendanceController extends responseController
 {
-    private attendanceService $attendanceService;
+    private AttendanceService $service;
 
-    public function __construct(attendanceService $attendanceService)
+    public function __construct(AttendanceService $attendanceService)
     {
-        $this->attendanceService = $attendanceService;
+        $this->service = $attendanceService;
     }
 
     public function handleRequest(): void
     {
-        SessionManager::init();
-
-        if (!SessionManager::isLoggedIn()) {
-            $this->error('Please log in first.', 401);
-        }
-
         $method = $_SERVER['REQUEST_METHOD'];
 
         switch ($method) {
             case 'GET':
-                $this->getAttendance();
+                $this->getMonthlyAttendance();
                 break;
             case 'POST':
-                $this->clockIn();
-                break;
-            case 'PUT':
-                $this->clockOut();
+                $this->markAttendance();
                 break;
             default:
                 $this->error('Method not allowed', 405);
+                break;
         }
     }
 
-    public function getAttendance(): void
+    private function getMonthlyAttendance(): void
     {
-        if (SessionManager::isAdmin() && empty($_GET['emp_id'])) {
-            $this->success('Attendance retrieved successfully', $this->attendanceService->getAll());
-        }
+        SessionManager::isLoggedIn();
 
-        $empId = (!empty($_GET['emp_id']) && SessionManager::isAdmin())
-            ? (int) $_GET['emp_id']
-            : SessionManager::currentEmpId();
+        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
+        $month = isset($_GET['month']) ? (string)$_GET['month'] : null;
+        $year  = isset($_GET['year']) ? (string)$_GET['year'] : null;
 
-        $this->success('Attendance retrieved successfully', $this->attendanceService->getByEmployee($empId));
+        $attendanceData = $this->service->getMonthlyAttendance($empId, $month, $year);
+
+        $this->success('Monthly attendance retrieved successfully', $attendanceData);
     }
 
-    public function clockIn(): void
+    private function markAttendance(): void
     {
-        try {
-            $result = $this->attendanceService->clockIn(SessionManager::currentEmpId());
-            $this->success('Clocked in successfully', $result, 201);
-        } catch (Exception $e) {
-            $this->error($e->getMessage(), 400);
-        }
-    }
+        SessionManager::isLoggedIn();
 
-    public function clockOut(): void
-    {
-        try {
-            $result = $this->attendanceService->clockOut(SessionManager::currentEmpId());
-            $this->success('Clocked out successfully', $result);
-        } catch (Exception $e) {
-            $this->error($e->getMessage(), 400);
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+
+        if (empty($data['emp_id']) || empty($data['status']) || empty($data['date'])) {
+            $this->error('Invalid or missing parameters (emp_id, date, status required).', 400);
         }
+
+        $saved = $this->service->recordAttendance(
+            $data['emp_id'],
+            $data['date'],
+            $data['status']
+        );
+
+        if ($saved) {
+            $this->success('Attendance logged successfully', [
+                'emp_id' => $data['emp_id'],
+                'status' => $data['status'],
+                'date'   => $data['date']
+            ], 200);
+        }
+
+        $this->error('Database operation failed.', 500);
     }
 }

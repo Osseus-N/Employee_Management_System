@@ -2,69 +2,56 @@
 
 namespace attendance;
 
-use database\Database;
-use PDO;
+use database;
 
 class attendanceRepository
 {
-    private PDO $db;
+    private $conn;
+    private Database $db;
+ public function __construct(Database $db)
+ {
+    $this->conn = $db->connect();
+    $this->db = $db;
+ }
+public function getMonthlyAttendance($emp_id, $year, $month){
 
-    public function __construct()
-    {
-        $this->db = Database::getConnection();
-    }
+     $sql = "SELECT att_work_date, att_status 
+             FROM attendance 
+             WHERE emp_id = ? 
+               AND YEAR(att_work_date) = ? 
+               AND MONTH(att_work_date) = ?
+        ORDER BY att_work_date ASC";
 
-    public function findAll(): array
-    {
-        $stmt = $this->db->query(
-            "SELECT a.*, e.emp_firstname, e.emp_lastname
-             FROM attendance a
-             INNER JOIN employees e ON a.emp_id = e.emp_id
-             ORDER BY a.att_work_date DESC"
-        );
+     $stmt = $this->conn->prepare($sql);
+     $stmt->bind_param("ssi", $emp_id, $year, $month);
+     $stmt->execute();
 
-        return $stmt->fetchAll();
-    }
+    $result = $stmt->fetch(MYSQLI_ASSOC);
+    return $result ?: null;
+}
+    public function insertAttendance($emp_id, $date, $status): bool{
 
-    public function findByEmployee(int $empId): array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT * FROM attendance WHERE emp_id = :id ORDER BY att_work_date DESC"
-        );
-        $stmt->execute(['id' => $empId]);
+     return $this->db->insert('attendance', [$emp_id, $date, $status]);
+ }
 
-        return $stmt->fetchAll();
-    }
+ public function presentDays($emp_id, $year, $month){
 
-    public function findTodayRecord(int $empId, string $date): ?array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT * FROM attendance WHERE emp_id = :id AND att_work_date = :date"
-        );
-        $stmt->execute(['id' => $empId, 'date' => $date]);
-        $row = $stmt->fetch();
+         $sql = "SELECT COUNT(*) AS total_present
+            FROM attendance
+            WHERE emp_id = ?
+              AND att_status = 'Present'
+              AND YEAR(att_work_date) = ?
+              AND MONTH(att_work_date) = ?;";
 
-        return $row ?: null;
-    }
+         $stmt = $this->db->prepare($sql);
+         $stmt->bind_param("ssi", $emp_id, $year, $month);
+         $result = $stmt->fetch(MYSQLI_ASSOC);
 
-    public function clockIn(int $empId, string $date, string $time): int
-    {
-        $stmt = $this->db->prepare(
-            "INSERT INTO attendance (emp_id, att_work_date, att_clock_in)
-             VALUES (:id, :date, :time)"
-        );
-        $stmt->execute(['id' => $empId, 'date' => $date, 'time' => $time]);
+         return (int)($result['total_present'] ?? 0);
+     }
 
-        return (int) $this->db->lastInsertId();
-    }
+    public function checkAttendance($emp_id,$att_work_date): bool{
 
-    public function clockOut(int $attId, string $time, float $totalHours): bool
-    {
-        $stmt = $this->db->prepare(
-            "UPDATE attendance SET att_clock_out = :time, att_total_hours = :hours
-             WHERE att_id = :id"
-        );
-
-        return $stmt->execute(['time' => $time, 'hours' => $totalHours, 'id' => $attId]);
-    }
+     return $this->db->select('attendance', '', ['emp_id' => $emp_id]);
+ }
 }

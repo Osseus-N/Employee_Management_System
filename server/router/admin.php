@@ -1,26 +1,41 @@
 <?php
 
-require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../session/sessionManager.php';
-require_once __DIR__ . '/../response/responseController.php';
-require_once __DIR__ . '/../model/employee.php';
-require_once __DIR__ . '/../employee/employeeRepository.php';
-require_once __DIR__ . '/../employee/employeeService.php';
+use admin\adminRepository;
+use admin\adminService;
+use admin\adminController;
+use payroll\payrollRepository;
+use payroll\payrollService;
+use employee\employeeRepository;
+use employee\employeeService;
+
 require_once __DIR__ . '/../admin/adminRepository.php';
 require_once __DIR__ . '/../admin/adminService.php';
 require_once __DIR__ . '/../admin/adminController.php';
 
-use admin\adminController;
-use admin\adminRepository;
-use admin\adminService;
-use employee\employeeRepository;
-use employee\employeeService;
+require_once __DIR__ . '/../payroll/payrollRepository.php';
+require_once __DIR__ . '/../payroll/payrollService.php';
 
-$employeeRepository = new employeeRepository();
-$employeeService    = new employeeService($employeeRepository);
+require_once __DIR__ . '/../employee/employeeRepository.php';
+require_once __DIR__ . '/../employee/employeeService.php';
 
-$adminRepository = new adminRepository();
-$adminService    = new adminService($adminRepository);
+require_once __DIR__ . '/../response/responseController.php';
+require_once __DIR__ . '/../database/database.php';
+require_once __DIR__ . '/../session/sessionManager.php';
 
-$controller = new adminController($adminService, $employeeService);
+$database = new Database();
+
+$adminRepo    = new \admin\adminRepository($database);
+$payrollRepo  = new \payroll\payrollRepository($database);
+$employeeRepo = new \employee\employeeRepository($database);
+
+$adminService    = new \admin\adminService($adminRepo);
+$payrollService  = new \payroll\payrollService($payrollRepo);
+$employeeService = new \employee\employeeService($employeeRepo);
+
+$controller = new \admin\adminController(
+    $adminService,
+    $payrollService,
+    $employeeService
+);
+
 $controller->handleRequest();
