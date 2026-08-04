@@ -45,12 +45,8 @@ class logInController extends ResponseController
         $this->seedDefaultAdminIfNeeded();
 
         if (isset($_SESSION['emp_id'])) {
-            $this->success('Already logged in.', [
-                'redirect' => '/Employee_Management_System/client/view/admin/admin_view.html'
-            ], 200);
-            return;
+            header('location: /Employee_Management_System/router/dashboard.php');
         }
-
         include __DIR__ . '/../../client/view/login/login.html';
 
     }

@@ -16,20 +16,24 @@ class logInService
 
         $acc = $this->logInRepository->isAccountExist($email);
 
-        if($acc){
-
-            $user =$this->employeeRepository->getEmployee($acc['emp_id']);
-
-            if(!password_verify($password, $user['password'])){
-                return null;
-            }
-
-            $user['role'] = $acc['acc_role'];
-            unset($user['password']);
-
-            return $user;
+        if (!$acc) {
+            return null;
         }
-        return null;
+
+        $user =$this->employeeRepository->getEmployee($acc['emp_id']);
+
+        if (!$user || !isset($acc['acc_password'])) {
+            return null;
+        }
+
+        if(!password_verify($password, $acc['acc_password'])){
+            return null;
+        }
+
+        $user['role'] = $acc['acc_role'];
+        unset($user['password']);
+
+        return $user;
     }
 
 

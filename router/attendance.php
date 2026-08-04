@@ -4,8 +4,8 @@ use attendance\AttendanceRepository;
 use attendance\AttendanceService;
 use attendance\attendanceController;
 
-require_once __DIR__ . '/../attendance/AttendanceRepository.php';
-require_once __DIR__ . '/../attendance/AttendanceService.php';
+require_once __DIR__ . '/../attendance/attendanceRepository.php';
+require_once __DIR__ . '/../attendance/attendanceService.php';
 require_once __DIR__ . '/../attendance/attendanceController.php';
 
 require_once __DIR__ . '/../response/responseController.php';

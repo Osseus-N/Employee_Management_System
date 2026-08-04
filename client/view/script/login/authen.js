@@ -46,11 +46,8 @@ async function login(event) {
         sessionStorage.setItem("emp_id", result.data.emp_id);
         sessionStorage.setItem("firstname", result.data.firstname);
 
-        if (result.data.role === "admin") {
-            window.location.href = "/Employee_Management_System/client/view/admin/admin_view.html";
-        } else {
-            window.location.href = "/Employee_Management_System/client/view/employee/employee_view.html";
-        }
+        window.location.href = "/Employee_Management_System/router/dashboard.php";
+
     } catch (error) {
         console.error("Login request failed:", error);
         if (errorEl) {

@@ -1,5 +1,5 @@
-const EMPLOYEE_API = "../../../server/router/employee.php";
-const LOGOUT_API = "../../../server/router/index.php";
+const EMPLOYEE_API = "../../../router/employee.php";
+const LOGOUT_API = "../../../index.php";
 
 // Security shit din
 if (!sessionStorage.getItem("role")) {

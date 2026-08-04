@@ -31,14 +31,12 @@ class employeeController extends responseController
 
     public function handleEmployees(){
 
-        SessionManager::isLoggedIn();
-
         $emp_id = $_SESSION['emp_id'];
 
         $user = $this->service->getEmployee($emp_id);
 
-        ($user) ? $this->success("Logged in Successfully", $user)
-            : $this->error("Employee not found" , 404);
+        ($user) ? include __DIR__ . '/../../client/view/employee/employee_view.html'
+        : $this->error("Employee not found" , 404);
     }
 
     public function handleUpdate(){
