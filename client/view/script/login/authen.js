@@ -1,4 +1,4 @@
-const LOGIN_API = "../server/router/login.php";
+const LOGIN_API = '/Employee_Management_System/index.php';
 
 document.addEventListener("DOMContentLoaded", function () {
     const loginForm = document.getElementById("loginForm");
@@ -17,6 +17,7 @@ async function login(event) {
     const errorEl = document.getElementById("loginError");
 
     try {
+
         const response = await fetch(LOGIN_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -24,8 +25,8 @@ async function login(event) {
             body: JSON.stringify({ email, password })
         });
 
-        if (!response.ok && response.status === 404) {
-            throw new Error("404: login.php not found at " + LOGIN_API);
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();
@@ -46,9 +47,9 @@ async function login(event) {
         sessionStorage.setItem("firstname", result.data.firstname);
 
         if (result.data.role === "admin") {
-            window.location.href = "../client/view/admin/admin_view.html";
+            window.location.href = "/Employee_Management_System/client/view/admin/admin_view.html";
         } else {
-            window.location.href = "../client/view/employee/employee_view.html";
+            window.location.href = "/Employee_Management_System/client/view/employee/employee_view.html";
         }
     } catch (error) {
         console.error("Login request failed:", error);

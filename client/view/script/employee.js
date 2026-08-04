@@ -1,9 +1,9 @@
 const EMPLOYEE_API = "../../../server/router/employee.php";
-const LOGOUT_API = "../../../server/router/login.php";
+const LOGOUT_API = "../../../server/router/index.php";
 
 // Security shit din
 if (!sessionStorage.getItem("role")) {
-    window.location.href = "../../../login/login.html";
+    window.location.href = "../login/login.html";
 }
 
 async function logout() {
@@ -14,7 +14,7 @@ async function logout() {
         console.error(error);
     }
     sessionStorage.clear();
-    window.location.href = "../../../login/login.html";
+    window.location.href = "../login/login.html";
 }
 
 document.addEventListener("DOMContentLoaded", function () {

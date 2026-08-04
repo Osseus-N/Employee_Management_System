@@ -2,16 +2,23 @@
 
 namespace login;
 
+use admin\adminRepository;
+use admin\adminService;
 use service\SessionManager;
 use response\responseController;
 
 class logInController extends ResponseController
 {
     private logInService $service;
+    private $adminRepository;
+    private $adminService;
 
-    public function __construct(logInService $logInService)
+    public function __construct(logInService $logInService, adminRepository $adminRepository,
+    adminService $adminService)
     {
         $this->service = $logInService;
+        $this->adminRepository = $adminRepository;
+        $this->adminService = $adminService;
     }
 
     public function handleRequest(): void
@@ -35,15 +42,27 @@ class logInController extends ResponseController
 
     public function showLoginForm(): void
     {
+        $this->seedDefaultAdminIfNeeded();
+
         if (isset($_SESSION['emp_id'])) {
             $this->success('Already logged in.', [
-                'redirect' => '/dashboard.php'
-            ]);
+                'redirect' => '/Employee_Management_System/client/view/admin/admin_view.html'
+            ], 200);
+            return;
         }
 
-        $this->login();
+        include __DIR__ . '/../../client/view/login/login.html';
     }
 
+    private function seedDefaultAdminIfNeeded(): void
+    {
+        $employees = $this->adminRepository->getAllEmployees();
+
+        if (empty($employees)) {
+            $this->adminService->createDefaultAdmin();
+        }
+
+    }
     private function login(): void
     {
         $data = json_decode(file_get_contents("php://input"), true) ?? [];
@@ -52,7 +71,7 @@ class logInController extends ResponseController
         $password = $data['password'] ?? '';
 
         if (empty($email) || empty($password)) {
-            $this->error('Email and password are required', 400);
+            $this->error('Email and password are required', 401);
         }
 
         $user = $this->service->authenticateAccount($email, $password);

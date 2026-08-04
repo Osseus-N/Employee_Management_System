@@ -91,4 +91,29 @@ class adminService
         $this->adminRepository->deleteEmployee($emp_id);
         return true;
     }
+
+    public function createDefaultAdmin()
+    {
+        $defaultAdminEmployee = new Employee(
+            empFirstname:      'Admin',
+            empLastname:       'Employee',
+            empGender:         'Other',
+            empPosition:       'admin',
+            empHourlyRate:     0.00,
+            empDateOfBirth:    '2000-01-01',
+            empContactNumber:  '0123456789',
+            empStatus:         'Active',
+        );
+
+        $defaultAdminEmail = 'admin@gmail.com';
+        $defaultAdminPassword = 'ChangeMe123!';
+
+        $this->adminRepository->createEmployee(
+            $defaultAdminEmployee,
+            $defaultAdminEmail,
+            $defaultAdminPassword
+        );
+
+        header('Location:index.php');
+    }
 }

@@ -37,7 +37,7 @@ class adminRepository
             return [];
         }
 
-        $rows = $result->fetch_all(MYSQLI_ASSOC);
+        $rows = $employees->fetch_all(MYSQLI_ASSOC);
 
         $users = [];
         foreach ($rows as $row) {
@@ -65,13 +65,14 @@ class adminRepository
             $this->db->insert('employees', $employeeData);
 
             $empId = $this->conn->insert_id;
-
+            $role = ($employeeData['emp_position']) === 'admin' ? 'admin' : 'employee';
             $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
             $accountData = [
                 'emp_id'   => $empId,
-                'email'    => $email,
-                'password' => $hashedPassword,
+                'acc_email'    => $email,
+                'acc_password' => $hashedPassword,
+                'acc_role' => $role,
             ];
 
             $this->db->insert('accounts', $accountData);

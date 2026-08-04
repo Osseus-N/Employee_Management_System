@@ -1,14 +1,14 @@
 const ADMIN_API = "../../../server/router/admin.php";
 const ATTENDANCE_API = "../../../server/router/attendance.php";
 const PAYROLL_API = "../../../server/router/payroll.php";
-const LOGOUT_API = "../../../server/router/login.php";
+const LOGOUT_API = "../../../server/router/index.php";
 
 let employees = [];
 let selectedID = null;
 
 // Security shit pang Access Guard
 if (sessionStorage.getItem("role") !== "admin") {
-    window.location.href = "../../../login/login.html";
+    window.location.href = "../login/login.html";
 }
 
 async function logout() {
@@ -19,7 +19,7 @@ async function logout() {
         console.error(error);
     }
     sessionStorage.clear();
-    window.location.href = "../../../login/login.html";
+    window.location.href = "../login/login.html";
 }
 
 document.addEventListener("DOMContentLoaded", function () {
