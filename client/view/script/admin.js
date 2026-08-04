@@ -1,79 +1,110 @@
-//PANG FETCH
-const employeeAPI = "../../server/employee/employeeController.php";
-const attendanceAPI = "../../server/attendance/attendanceController.php";
-const payrollAPI = "../../server/payroll/payrollController.php";
+const ADMIN_API = "../../../server/router/admin.php";
+const ATTENDANCE_API = "../../../server/router/attendance.php";
+const PAYROLL_API = "../../../server/router/payroll.php";
+const LOGOUT_API = "../../../server/router/login.php";
 
 let employees = [];
 let selectedID = null;
 
-//LOAD PAGE
-window.onload = function () {
-    loadEmployees();
-    const search = document.getElementById("searchEmployee");
-    if (search) {
-        search.addEventListener("keyup", searchEmployee);
-    }
-    const refresh = document.getElementById("btnRefresh");
-    if (refresh) {
-        refresh.onclick = loadEmployees;
-    }
-};
+// Security shit pang Access Guard
+if (sessionStorage.getItem("role") !== "admin") {
+    window.location.href = "../../../login/login.html";
+}
 
-//PANG LOAD NG EMPLOYEE
+async function logout() {
+    if (!confirm("Logout?")) return;
+    try {
+        await fetch(LOGOUT_API, { method: "DELETE", credentials: "same-origin" });
+    } catch (error) {
+        console.error(error);
+    }
+    sessionStorage.clear();
+    window.location.href = "../../../login/login.html";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const name = sessionStorage.getItem("firstname");
+    if (name) document.getElementById("welcomeName").textContent = name;
+
+    refreshDashboard();
+
+    document.getElementById("searchEmployee").addEventListener("keyup", searchEmployee);
+    document.getElementById("btnRefresh").addEventListener("click", refreshDashboard);
+    document.getElementById("toggleEmployeeForm").addEventListener("click", showCreateForm);
+    document.getElementById("btnSave").addEventListener("click", onSave);
+    document.getElementById("btnCancel").addEventListener("click", hideForm);
+    document.getElementById("payrollForm").addEventListener("submit", processPayroll);
+});
+
+// LOAD OF EMPLOYEE
 async function loadEmployees() {
     try {
-        const response = await fetch(employeeAPI);
+        const response = await fetch(ADMIN_API, { credentials: "same-origin" });
         const result = await response.json();
+
         if (result.success) {
             employees = result.data;
             displayEmployees(employees);
-            updateDashboard();
+            populatePayrollDropdown();
         } else {
             alert(result.message);
         }
     } catch (error) {
-        console.log(error);
+        console.error(error);
         alert("Cannot connect to server.");
     }
 }
 
-//TABLE DISPLAY
+//DISPLAY EMPLOYEE
 function displayEmployees(data) {
     const table = document.getElementById("employeeTableBody");
-    if (!table) return;
     table.innerHTML = "";
 
-    if (data.length == 0) {
-        table.innerHTML =
-            "<tr><td colspan='8'>No Employees Found</td></tr>";
+    if (data.length === 0) {
+        table.innerHTML = "<tr><td colspan='11' class='text-center py-6 text-gray-400'>No employees found</td></tr>";
         return;
     }
 
     data.forEach(emp => {
-        table.innerHTML += `
-        <tr>
-            <td>${emp.emp_id}</td>
-            <td>${emp.emp_firstname}</td>
-            <td>${emp.emp_lastname}</td>
-            <td>${emp.emp_gender}</td>
-            <td>${emp.emp_position}</td>
-            <td>${emp.emp_hourly_rate}</td>
-            <td>${emp.emp_status}</td>
-            <td>
-                <button onclick="selectEmployee(${emp.emp_id})">Edit</button>
-                <button onclick="deleteEmployee(${emp.emp_id})">Delete</button>
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="px-4 py-3">${escapeHtml(emp.emp_firstname)}</td>
+            <td class="px-4 py-3">${escapeHtml(emp.emp_lastname)}</td>
+            <td class="px-4 py-3">${emp.emp_date_of_birth}</td>
+            <td class="px-4 py-3">${escapeHtml(emp.emp_contact_number ?? "")}</td>
+            <td class="px-4 py-3">${escapeHtml(emp.emp_gender)}</td>
+            <td class="px-4 py-3">${escapeHtml(emp.emp_position)}</td>
+            <td class="px-4 py-3">₱${Number(emp.emp_hourly_rate).toFixed(2)}</td>
+            <td class="px-4 py-3">${statusBadge(emp.emp_status)}</td>
+            <td class="px-4 py-3 text-center text-gray-500 text-sm">Use "Process Payroll" below</td>
+            <td class="px-4 py-3 text-center">
+                <button class="text-blue-600 hover:underline" onclick="selectEmployee(${emp.emp_id})">Edit</button>
             </td>
-        </tr>
+            <td class="px-4 py-3 text-center">
+                <button class="text-red-600 hover:underline" onclick="deleteEmployee(${emp.emp_id})">Delete</button>
+            </td>
         `;
+        table.appendChild(row);
     });
 }
 
-//SEARCH FOR EMPLOYEE
+function statusBadge(status) {
+    const colors = {
+        Active: "bg-green-100 text-green-700",
+        Inactive: "bg-yellow-100 text-yellow-700",
+        Terminated: "bg-red-100 text-red-700"
+    };
+    return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${colors[status] || ""}">${status}</span>`;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+}
+
 function searchEmployee() {
-    const keyword = document
-        .getElementById("searchEmployee")
-        .value
-        .toLowerCase();
+    const keyword = document.getElementById("searchEmployee").value.toLowerCase();
     const filtered = employees.filter(emp =>
         emp.emp_firstname.toLowerCase().includes(keyword) ||
         emp.emp_lastname.toLowerCase().includes(keyword) ||
@@ -83,321 +114,282 @@ function searchEmployee() {
     displayEmployees(filtered);
 }
 
-//EMPLOYEE SELECTING
+// Creation of Form
+function showCreateForm() {
+    selectedID = null;
+    document.getElementById("formTitle").textContent = "Create New Employee";
+    document.getElementById("employeeForm").reset();
+    document.getElementById("male").checked = true;
+    document.getElementById("status").value = "Active";
+    setLoginFieldsVisible(true);
+    document.getElementById("createEmployeeForm").classList.remove("hidden");
+}
+
+//Pang Select ng Employee
 function selectEmployee(id) {
     selectedID = id;
     const emp = employees.find(e => e.emp_id == id);
     if (!emp) return;
-    document.getElementById("firstname").value =
-        emp.emp_firstname;
 
-    document.getElementById("lastname").value =
-        emp.emp_lastname;
+    document.getElementById("formTitle").textContent = "Edit Employee";
+    document.getElementById("firstName").value = emp.emp_firstname;
+    document.getElementById("lastName").value = emp.emp_lastname;
+    document.getElementById("dob").value = emp.emp_date_of_birth;
+    document.getElementById("contactNumber").value = emp.emp_contact_number ?? "";
+    document.getElementById("position").value = emp.emp_position;
+    document.getElementById("hourlyRate").value = emp.emp_hourly_rate;
+    document.getElementById("status").value = emp.emp_status;
 
-    document.getElementById("gender").value =
-        emp.emp_gender;
+    if (emp.emp_gender === "Male") document.getElementById("male").checked = true;
+    else if (emp.emp_gender === "Female") document.getElementById("female").checked = true;
+    else document.getElementById("other").checked = true;
 
-    document.getElementById("position").value =
-        emp.emp_position;
-
-    document.getElementById("hourly_rate").value =
-        emp.emp_hourly_rate;
-
-    document.getElementById("status").value =
-        emp.emp_status;
+    setLoginFieldsVisible(false); // editing never touches login credentials here
+    document.getElementById("createEmployeeForm").classList.remove("hidden");
 }
 
-//FOR CLEANING FORM
-function clearForm() {
+function setLoginFieldsVisible(visible) {
+    ["loginFieldsWrap", "passwordFieldWrap", "roleFieldWrap"].forEach(id => {
+        document.getElementById(id).classList.toggle("hidden", !visible);
+    });
+}
+
+function hideForm() {
     selectedID = null;
-
-    document.getElementById("firstname").value = "";
-    document.getElementById("lastname").value = "";
-    document.getElementById("gender").value = "Male";
-    document.getElementById("position").value = "";
-    document.getElementById("hourly_rate").value = "";
-    document.getElementById("status").value = "Active";
+    document.getElementById("employeeForm").reset();
+    document.getElementById("createEmployeeForm").classList.add("hidden");
 }
 
+function onSave() {
+    if (selectedID === null) {
+        addEmployee();
+    } else {
+        updateEmployee();
+    }
+}
+
+//Pang Collect
+function collectEmployeeFormData() {
+    return {
+        emp_firstname: document.getElementById("firstName").value,
+        emp_lastname: document.getElementById("lastName").value,
+        emp_gender: document.querySelector('input[name="gender"]:checked').value,
+        emp_date_of_birth: document.getElementById("dob").value,
+        emp_contact_number: document.getElementById("contactNumber").value,
+        emp_position: document.getElementById("position").value,
+        emp_hourly_rate: document.getElementById("hourlyRate").value,
+        emp_status: document.getElementById("status").value
+    };
+}
 
 //ADD EMPLOYEE
 async function addEmployee() {
     if (!validateEmployee()) return;
-    const employee = {
 
-        emp_firstname: document.getElementById("firstname").value,
-        emp_lastname: document.getElementById("lastname").value,
-        emp_gender: document.getElementById("gender").value,
-        emp_position: document.getElementById("position").value,
-        emp_hourly_rate: document.getElementById("hourly_rate").value,
-        emp_status: document.getElementById("status").value
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const role = document.getElementById("loginRole").value;
 
+    if (!email || !validateEmail(email)) {
+        alert("A valid login email is required.");
+        return;
+    }
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+    }
+
+    const payload = {
+        ...collectEmployeeFormData(),
+        acc_email: email,
+        acc_password: password,
+        acc_role: role
     };
 
     try {
-        const response = await fetch(employeeAPI, {
+        const response = await fetch(ADMIN_API, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(employee)
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify(payload)
         });
-
         const result = await response.json();
         alert(result.message);
-
         if (result.success) {
-            clearForm();
-            loadEmployees();
+            hideForm();
+            refreshDashboard();
         }
-
     } catch (error) {
-        console.log(error);
+        console.error(error);
         alert("Unable to add employee.");
     }
-
 }
 
 //UPDATE EMPLOYEE
 async function updateEmployee() {
-
-    if (selectedID == null) {
-        alert("Select an employee first.");
-        return;
-    }
     if (!validateEmployee()) return;
-    const employee = {
-        emp_id: selectedID,
-        emp_firstname: document.getElementById("firstname").value,
-        emp_lastname: document.getElementById("lastname").value,
-        emp_gender: document.getElementById("gender").value,
-        emp_position: document.getElementById("position").value,
-        emp_hourly_rate: document.getElementById("hourly_rate").value,
-        emp_status: document.getElementById("status").value
-    };
+
+    const payload = { emp_id: selectedID, ...collectEmployeeFormData() };
 
     try {
-        const response = await fetch(employeeAPI, {
+        const response = await fetch(ADMIN_API, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(employee)
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
         alert(result.message);
         if (result.success) {
-            clearForm();
-            loadEmployees();
+            hideForm();
+            refreshDashboard();
         }
-
     } catch (error) {
-        console.log(error);
+        console.error(error);
         alert("Unable to update employee.");
     }
 }
 
-//DELETE
+//DELETE EMPLOYEE
 async function deleteEmployee(id) {
+    if (!confirmDelete()) return;
 
-    if (!confirm("Delete this employee?")) {
+    try {
+        const response = await fetch(ADMIN_API, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ emp_id: id })
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) refreshDashboard();
+    } catch (error) {
+        console.error(error);
+        alert("Unable to delete employee.");
+    }
+}
+
+// ATTENDANCE(Para makita ng admin lahat)
+async function loadAttendance() {
+    const table = document.getElementById("attendanceTableBody");
+    try {
+        const response = await fetch(ATTENDANCE_API, { credentials: "same-origin" });
+        const result = await response.json();
+        table.innerHTML = "";
+
+        if (!result.success || result.data.length === 0) {
+            table.innerHTML = "<tr><td colspan='5' class='text-center py-6 text-gray-400'>No attendance records.</td></tr>";
+            return;
+        }
+
+        result.data.forEach(att => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="px-4 py-3">${escapeHtml(att.emp_firstname)} ${escapeHtml(att.emp_lastname)}</td>
+                <td class="px-4 py-3">${att.att_work_date}</td>
+                <td class="px-4 py-3">${att.att_clock_in}</td>
+                <td class="px-4 py-3">${att.att_clock_out ?? "—"}</td>
+                <td class="px-4 py-3">${att.att_total_hours ?? "—"}</td>
+            `;
+            table.appendChild(row);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// Payroll
+function populatePayrollDropdown() {
+    const select = document.getElementById("payrollEmpId");
+    select.innerHTML = employees
+        .map(e => `<option value="${e.emp_id}">${escapeHtml(e.emp_firstname)} ${escapeHtml(e.emp_lastname)}</option>`)
+        .join("");
+}
+
+async function loadPayroll() {
+    const table = document.getElementById("payrollTableBody");
+    try {
+        const response = await fetch(PAYROLL_API, { credentials: "same-origin" });
+        const result = await response.json();
+        table.innerHTML = "";
+
+        if (!result.success || result.data.length === 0) {
+            table.innerHTML = "<tr><td colspan='6' class='text-center py-6 text-gray-400'>No payroll records.</td></tr>";
+            return;
+        }
+
+        result.data.forEach(pay => {
+            const row = document.createElement("tr");
+            const payAction = pay.pay_status === "Pending"
+                ? `<button class="text-blue-600 hover:underline" onclick="markPaid(${pay.pay_id})">Mark Paid</button>`
+                : `<span class="text-gray-400 text-sm">—</span>`;
+            row.innerHTML = `
+                <td class="px-4 py-3">${escapeHtml(pay.emp_firstname)} ${escapeHtml(pay.emp_lastname)}</td>
+                <td class="px-4 py-3">${pay.pay_period_start} → ${pay.pay_period_end}</td>
+                <td class="px-4 py-3">${pay.pay_total_hours}</td>
+                <td class="px-4 py-3">₱${Number(pay.pay_amount).toFixed(2)}</td>
+                <td class="px-4 py-3">${statusBadge(pay.pay_status)}</td>
+                <td class="px-4 py-3 text-center">${payAction}</td>
+            `;
+            table.appendChild(row);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function processPayroll(event) {
+    event.preventDefault();
+    const empId = document.getElementById("payrollEmpId").value;
+    const start = document.getElementById("payPeriodStart").value;
+    const end = document.getElementById("payPeriodEnd").value;
+
+    if (!empId || !start || !end) {
+        alert("Please select an employee and a full date range.");
         return;
     }
 
     try {
-        const response = await fetch(employeeAPI, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                emp_id: id
-            })
-        });
-
-        const result = await response.json();
-        alert(result.message);
-
-        if (result.success) {
-            loadEmployees();
-        }
-    } catch (error) {
-        console.log(error);
-        alert("Unable to delete employee.");
-    }
-}
-// SAVE
-const saveBtn = document.getElementById("btnSave");
-
-if (saveBtn) {
-    saveBtn.addEventListener("click", function () {
-        if (selectedID == null) {
-            addEmployee();
-        } else {
-            updateEmployee();
-        }
-    });
-}
-
-//CANCEL
-
-const cancelBtn = document.getElementById("btnCancel");
-if (cancelBtn) {
-    cancelBtn.addEventListener("click", function () {
-        clearForm();
-    });
-}
-
-// PAYROLL
-const payrollTable = document.getElementById("payrollTableBody");
-async function loadPayroll() {
-
-    if (!payrollTable) return;
-    try {
-        const response = await fetch(payrollAPI);
-        const result = await response.json();
-        payrollTable.innerHTML = "";
-        if (!result.success) {
-            payrollTable.innerHTML =
-                "<tr><td colspan='6'>No payroll records.</td></tr>";
-            return;
-        }
-        result.data.forEach(pay => {
-            payrollTable.innerHTML += `
-
-            <tr>
-                <td>${pay.emp_id}</td>
-                <td>${pay.pay_period_start}</td>
-                <td>${pay.pay_period_end}</td>
-                <td>${pay.pay_amount}</td>
-                <td>${pay.pay_status}</td>
-            </tr>
-            `;
-        });
-    } catch (error) {
-        console.log(error);
-    }
-}
-document.addEventListener("DOMContentLoaded", function () {
-    checkUserRole();
-});
-
-function checkUserRole() {
-
-    const userRole = sessionStorage.getItem("role") || localStorage.getItem("role");
-    const adminBtn = document.getElementById("adminReturnBtn");
-
-    if (userRole && userRole.toLowerCase() === "admin") {
-        adminBtn.classList.remove("d-none");
-    }
-}
-//PAY OF EMPLOYEE
-
-async function payEmployee(id, month, year) {
-    try {
-        const response = await fetch(payrollAPI, {
+        const response = await fetch(PAYROLL_API, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                emp_id: id,
-                month: month,
-                year: year
-            })
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ emp_id: empId, pay_period_start: start, pay_period_end: end })
         });
-
         const result = await response.json();
         alert(result.message);
-        loadPayroll();
-
+        if (result.success) {
+            document.getElementById("payrollForm").reset();
+            loadPayroll();
+        }
     } catch (error) {
-        console.log(error);
+        console.error(error);
         alert("Unable to process payroll.");
     }
 }
 
-//ATTENDANCE
-const attendanceTable =
-    document.getElementById("attendanceTableBody");
-
-async function loadAttendance() {
-    if (!attendanceTable) return;
+async function markPaid(payId) {
+    if (!confirm("Mark this payroll record as paid?")) return;
     try {
-        const response =
-            await fetch(attendanceAPI);
-
-        const result =
-            await response.json();
-
-        attendanceTable.innerHTML = "";
-        if (!result.success) {
-            attendanceTable.innerHTML =
-                "<tr><td colspan='6'>No attendance found.</td></tr>";
-            return;
-        }
-        result.data.forEach(att => {
-            attendanceTable.innerHTML += `
-            <tr>
-                <td>${att.emp_id}</td>
-                <td>${att.att_work_date}</td>
-                <td>${att.att_clock_in}</td>
-                <td>${att.att_clock_out}</td>
-                <td>${att.att_total_hours}</td>
-            </tr>
-            `;
+        const response = await fetch(PAYROLL_API, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ pay_id: payId })
         });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) loadPayroll();
     } catch (error) {
-        console.log(error);
+        console.error(error);
+        alert("Unable to update payroll.");
     }
 }
-//COUNT FOR DASHBOARD
 
-function updateDashboard() {
-    const total = employees.length;
-    const active = employees.filter(emp =>
-        emp.emp_status == "Active").length;
-    const inactive = employees.filter(emp =>
-        emp.emp_status == "Inactive").length;
-    const terminated = employees.filter(emp =>
-        emp.emp_status == "Terminated").length;
-    if (document.getElementById("totalEmployees"))
-        document.getElementById("totalEmployees").innerHTML = total;
-
-    if (document.getElementById("activeEmployees"))
-        document.getElementById("activeEmployees").innerHTML = active;
-
-    if (document.getElementById("inactiveEmployees"))
-        document.getElementById("inactiveEmployees").innerHTML = inactive;
-
-    if (document.getElementById("terminatedEmployees"))
-        document.getElementById("terminatedEmployees").innerHTML = terminated;
-}
-
-//LOGOUT
-async function logout() {
-    if (!confirm("Logout?")) return;
-    try {
-        await fetch("../../server/login/loginController.php", {
-            method: "DELETE"
-        });
-    } catch (error) {
-        console.log(error);
-    }
-    window.location.href =
-        "../../login/login.html";
-}
-
-//REFRESH OF DASHBOARD
+// Pang Refresh
 async function refreshDashboard() {
     await loadEmployees();
-    updateDashboard();
     loadAttendance();
     loadPayroll();
 }
-
-//ATOMATIC LOAD
-
-window.addEventListener("load", function () {
-    refreshDashboard();
-});

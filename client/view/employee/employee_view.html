@@ -3,120 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Portal - Self Service</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="employee-style.css" rel="stylesheet">
+    <title>Employee Self Service Portal</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../style/style.css">
+
     <script src="../script/login/validation.js"></script>
-    <script src="../script/admin.js"></script>
+    <script src="../script/attendance.js"></script>
+    <script src="../script/payroll.js"></script>
+    <script src="../script/employee.js" defer></script>
 </head>
-<body>
 
-<header class="accent-header p-3 mb-4 shadow-sm">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <h1 class="h4 mb-0 fw-bold">Employee Self-Service Portal</h1>
+<body class="bg-slate-100">
 
-        <div class="d-flex align-items-center gap-3">
+<!-- Header -->
+<header class="bg-slate-800 shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Employee Self Service Portal</h1>
+            <p class="text-slate-300">Payroll &amp; Attendance</p>
+        </div>
 
-            <a href="../admin/admin_view.html" id="adminReturnBtn" class="btn btn-dark btn-sm d-none">
-                <i class="bi bi-speedometer2 me-1"></i> Admin Dashboard
+        <div class="flex items-center gap-4">
+            <span id="welcomeGreeting" class="text-white font-semibold">Welcome</span>
+            <a id="adminReturnBtn" href="../admin/admin_view.html"
+               class="hidden bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl transition">
+                Admin Dashboard
             </a>
-
-            <span class="fw-semibold" id="welcome Greeting"></span>
+            <button onclick="logout()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl transition">
+                Logout
+            </button>
         </div>
     </div>
 </header>
 
-<main class="container-fluid px-4">
-    <div class="row g-4">
+<!-- Main -->
+<main class="max-w-7xl mx-auto p-6">
 
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title text-muted mb-0"><i class="bi bi-person-lines-fill me-2"></i> My Profile</h5>
-                    <small class="text-muted">Edit details if inaccurate</small>
-                </div>
-                <div class="card-body">
-                    <form id="profileForm">
-                        <div class="mb-3">
-                            <label for="empFirstName" class="form-label text-muted small">First Name</label>
-                            <input type="text" class="form-control" id="empFirstName" required>
+    <div class="grid lg:grid-cols-3 gap-8">
+
+        <!-- Profile -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-2xl font-bold text-slate-700 mb-6">My Profile</h2>
+
+                <form id="profileForm">
+                    <div class="space-y-5">
+                        <div>
+                            <label for="empFirstName" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                            <input type="text" id="empFirstName" required
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div class="mb-3">
-                            <label for="empLastName" class="form-label text-muted small">Last Name</label>
-                            <input type="text" class="form-control" id="empLastName" required>
+
+                        <div>
+                            <label for="empLastName" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                            <input type="text" id="empLastName" required
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div class="mb-3">
-                            <label for="empEmail" class="form-label text-muted small">Email Address</label>
-                            <input type="email" class="form-control" id="empEmail" required>
+
+                        <div>
+                            <label for="empContact" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="text" id="empContact" maxlength="11"
+                                   class="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <div class="mb-3">
-                            <label for="empPhone" class="form-label text-muted small">Phone Number</label>
-                            <input type="text" class="form-control" id="empPhone">
+
+                        <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 pt-2 border-t">
+                            <div>
+                                <p class="text-gray-400">Position</p>
+                                <p id="empPosition" class="font-medium text-slate-700">—</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Status</p>
+                                <p id="empStatus" class="font-medium text-slate-700">—</p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="empAddress" class="form-label text-muted small">Home Address</label>
-                            <textarea class="form-control" id="empAddress" rows="2"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-accent w-100">Save Changes</button>
-                    </form>
-                </div>
+
+                        <button type="submit"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <div class="col-lg-8">
+        <!-- Right Side -->
+        <div class="lg:col-span-2 space-y-8">
 
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title text-muted mb-0">
-                        <i class="bi bi-calendar-check me-2"></i> Attendance Log
-                    </h5>
+            <!-- Attendance Card -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <div>
-                        <button class="btn btn-success btn-sm" id="btnMarkPresent">
-                            <i class="bi bi-check-circle me-1"></i> Mark Present
+                        <h2 class="text-2xl font-bold text-slate-700">Attendance Log</h2>
+                        <p class="text-gray-500 text-sm">Track your daily attendance</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="btnMarkPresent"
+                                class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition">
+                            Clock In
+                        </button>
+                        <button id="btnClockOut"
+                                class="bg-slate-600 hover:bg-slate-700 text-white px-5 py-3 rounded-xl font-semibold transition">
+                            Clock Out
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
-                        <span>Less</span>
-                        <div class="attendance-box absent"></div>
-                        <div class="attendance-box present"></div>
-                        <span>Present</span>
-                    </div>
 
-                    <div id="attendanceGrid" class="attendance-grid"></div>
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Clock In</th>
+                            <th class="px-4 py-3 text-left">Clock Out</th>
+                            <th class="px-4 py-3 text-left">Hours</th>
+                        </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody" class="divide-y divide-gray-200">
+                        <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 pt-3">
-                    <h5 class="card-title text-muted mb-0"><i class="bi bi-receipt me-2"></i> Payroll History</h5>
+            <!-- Payroll Card -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-700">Payroll History</h2>
+                    <p class="text-gray-500 text-sm">View your salary records</p>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                            <tr>
-                                <th>Pay Period</th>
-                                <th>Hours Worked</th>
-                                <th>Gross Pay</th>
-                                <th>Net Pay</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            <tbody id="payrollTableBody"></tbody>
-                        </table>
-                    </div>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="min-w-full">
+                        <thead class="bg-slate-800 text-white">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Pay Period</th>
+                            <th class="px-5 py-3 text-left">Hours Worked</th>
+                            <th class="px-5 py-3 text-left">Amount</th>
+                            <th class="px-5 py-3 text-left">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="payrollTableBody" class="divide-y divide-gray-200">
+                        <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
         </div>
-
     </div>
+
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="employee.js"></script>
 </body>
 </html>

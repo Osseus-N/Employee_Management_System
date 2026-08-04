@@ -1,50 +1,63 @@
-async function loadAttendanceHeatmap(empId, containerId = "attendanceHeatmap") {
-    try {
-        const response = await fetch(`../../server/attendance/attendanceController.php?action=getEmployeeAttendance&emp_id=${empId}`);
-        const result = await response.json();
+const ATTENDANCE_SELF_API = "../../../server/router/attendance.php";
 
-        if (!result.success || !result.data || result.data.length === 0) {
-            document.getElementById(containerId).innerHTML = "<p class='text-muted'>No attendance records found.</p>";
+//Para makita attendance
+async function loadMyAttendance() {
+    const table = document.getElementById("attendanceTableBody");
+    if (!table) return;
+
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, { credentials: "same-origin" });
+        const result = await response.json();
+        table.innerHTML = "";
+
+        if (!result.success || result.data.length === 0) {
+            table.innerHTML = "<tr><td colspan='4' class='text-center py-6 text-gray-400'>No attendance records yet.</td></tr>";
             return;
         }
 
-        const attendanceList = result.data;
-
-        const attendanceMap = {};
-        const dates = [];
-
-        attendanceList.forEach(item => {
-            attendanceMap[item.date] = item.status.toLowerCase();
-            dates.push(new Date(item.date));
+        result.data.forEach(att => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="px-4 py-3">${att.att_work_date}</td>
+                <td class="px-4 py-3">${att.att_clock_in}</td>
+                <td class="px-4 py-3">${att.att_clock_out ?? "—"}</td>
+                <td class="px-4 py-3">${att.att_total_hours ?? "—"}</td>
+            `;
+            table.appendChild(row);
         });
-
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-
-        const gridContainer = document.getElementById(containerId);
-        gridContainer.innerHTML = ""; // Clear existing contents
-
-        let currentDate = new Date(minDate);
-
-        while (currentDate <= maxDate) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const status = attendanceMap[dateStr] || "no-record";
-
-            // Create individual square/box
-            const box = document.createElement("div");
-            box.className = `attendance-box status-${status}`;
-
-            box.title = `${dateStr}: ${status.toUpperCase()}`;
-
-            gridContainer.appendChild(box);
-
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
     } catch (error) {
-        console.error("Error loading attendance heatmap:", error);
-        document.getElementById(containerId).innerHTML = "<p class='text-danger'>Failed to load attendance grid.</p>";
+        console.error(error);
     }
+}
 
+//Papasok
+async function clockIn() {
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, {
+            method: "POST",
+            credentials: "same-origin"
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) loadMyAttendance();
+    } catch (error) {
+        console.error(error);
+        alert("Unable to clock in.");
+    }
+}
 
+//Palabas
+async function clockOut() {
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, {
+            method: "PUT",
+            credentials: "same-origin"
+        });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) loadMyAttendance();
+    } catch (error) {
+        console.error(error);
+        alert("Unable to clock out.");
+    }
 }
