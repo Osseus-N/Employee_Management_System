@@ -52,6 +52,7 @@ class logInController extends ResponseController
         }
 
         include __DIR__ . '/../../client/view/login/login.html';
+
     }
 
     private function seedDefaultAdminIfNeeded(): void
