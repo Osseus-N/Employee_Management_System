@@ -1,7 +1,7 @@
 const EMPLOYEE_API = "Employee_Management_System/employee/?action=edit";
 
-if (!sessionStorage.getItem("role")) {
-    window.location.href = "../view/login.html";
+if (!sessionStorage.getItem("role") && !isLoginPage) {
+    window.location.href = "/employee_management_system/logout";
 }
 
 async function saveProfile(event) {

@@ -5,10 +5,9 @@ const PAYROLL_API       = "/employee_management_system/payroll/self";
 let employees = [];
 let selectedID = null;
 
-if (sessionStorage.getItem("role") !== "admin") {
-    window.location.href = "../view/login.html";
+if (!sessionStorage.getItem("role") && !isLoginPage) {
+    window.location.href = "/employee_management_system/logout";
 }
-
 document.addEventListener("DOMContentLoaded", function () {
     const name = sessionStorage.getItem("firstname");
     if (name) document.getElementById("welcomeName").textContent = name;

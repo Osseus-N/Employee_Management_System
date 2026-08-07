@@ -77,7 +77,7 @@ class logInController extends ResponseController
     {
         SessionManager::init();
         SessionManager::destroySession();
-        header('Location: /Employee_Management_System/index.php');
+        header('Location: /employee_management_system');
         exit;
     }
 

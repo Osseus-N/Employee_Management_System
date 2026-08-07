@@ -65,7 +65,7 @@ $router->post('/login', function() use ($loginController) {
     $loginController->login();
 });
 
-$router->delete('/logout', function() use ($loginController) {
+$router->get('/logout', function() use ($loginController) {
     $loginController->logout();
 });
 

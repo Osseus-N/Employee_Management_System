@@ -1,4 +1,4 @@
-const LOGOUT_API = "/employee_management_system/index.php?action=logout";
+const LOGOUT_API = "/employee_management_system/logout";
 document.addEventListener("DOMContentLoaded", function () {
     const confirmLogoutBtn = document.getElementById("btnLogout");
     if (!confirmLogoutBtn) return;
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 async function logout() {
     try {
         const response = await fetch(LOGOUT_API, {
-            method: "DELETE",
+            method: "GET",
             credentials: "same-origin"
         });
         const result = await response.json();

@@ -1,20 +1,31 @@
-const EMPLOYEE_API   = "/employee_management_system/employee";
+const EMPLOYEE_API = "/employee_management_system/employee";
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-if (!sessionStorage.getItem("role")) {
-    window.location.href = "/employee_management_system/";
+const currentPath = window.location.pathname;
+const isLoginPage = currentPath === "/employee_management_system/" || currentPath === "/employee_management_system/index.html";
+
+if (!sessionStorage.getItem("role") && !isLoginPage) {
+    window.location.href = "/employee_management_system/logout";
 }
 
 document.addEventListener("DOMContentLoaded", function () {
     const name = sessionStorage.getItem("firstname");
-    if (name) document.getElementById("welcomeGreeting").textContent = "Welcome, " + name;
-
-    if (sessionStorage.getItem("role") === "admin") {
-        document.getElementById("adminReturnBtn").classList.remove("hidden");
+    if (name && document.getElementById("welcomeGreeting")) {
+        document.getElementById("welcomeGreeting").textContent = "Welcome, " + name;
     }
 
-    loadDashboard();
+    if (sessionStorage.getItem("role") === "admin") {
+        const adminBtn = document.getElementById("adminReturnBtn");
+        if (adminBtn) adminBtn.classList.remove("hidden");
+    }
 
-    document.getElementById("profileForm").addEventListener("submit", saveProfile);
+    // Only load dashboard if required elements exist on page
+    if (document.getElementById("attendanceCalendar")) {
+        loadDashboard();
+    }
+
+    const profileForm = document.getElementById("profileForm");
+    if (profileForm) profileForm.addEventListener("submit", saveProfile);
 
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) logoutBtn.addEventListener("click", logout);
@@ -35,48 +46,58 @@ async function loadDashboard() {
 
         const { user, attendance, payroll } = result.data;
 
-        document.getElementById("empFirstName").value = user.emp_firstname;
-        document.getElementById("empLastName").value = user.emp_lastname;
-        document.getElementById("empContact").value = user.emp_contact_number ?? "";
-        document.getElementById("empPosition").textContent = user.emp_position;
-        document.getElementById("empStatus").textContent = user.emp_status;
+        if (user) {
+            document.getElementById("empFirstName").value = user.emp_firstname ?? "";
+            document.getElementById("empLastName").value = user.emp_lastname ?? "";
+            document.getElementById("empContact").value = user.emp_contact_number ?? "";
+            document.getElementById("empPosition").textContent = user.emp_position ?? "";
+            document.getElementById("empStatus").textContent = user.emp_status ?? "";
+        }
 
         const attendanceMap = {};
-        attendance.forEach(att => attendanceMap[attendance.att_work_date] = att);
-        renderCalendar(document.getElementById("attendanceCalendar"), attendanceMap);
+        if (Array.isArray(attendance)) {
+            attendance.forEach(att => {
+                if (att.att_work_date) {
+                    attendanceMap[att.att_work_date] = att;
+                }
+            });
+        }
 
+        renderCalendar(document.getElementById("attendanceCalendar"), attendanceMap);
         renderPayrollTable(payroll);
     } catch (error) {
         console.error(error);
         alert("Cannot connect to server.");
     }
 }
-        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        function renderPayrollTable(payroll) {
-            const table = document.getElementById("payrollTableBody");
-            if (!table) return;
+function renderPayrollTable(payroll) {
+    const table = document.getElementById("payrollTableBody");
+    if (!table) return;
 
-            table.innerHTML = "";
+    table.innerHTML = "";
 
-            if (!payroll || payroll.length === 0) {
-                table.innerHTML = "<tr><td colspan='4' class='text-center py-6 text-gray-400'>No payroll records yet.</td></tr>";
-                return;
-            }
+    if (!payroll || payroll.length === 0) {
+        table.innerHTML = "<tr><td colspan='4' class='text-center py-6 text-gray-400'>No payroll records yet.</td></tr>";
+        return;
+    }
 
-            payroll.forEach(pay => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
+    payroll.forEach(pay => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
             <td class="px-5 py-3">${pay.pay_period_start} → ${pay.pay_period_end}</td>
             <td class="px-5 py-3">${pay.pay_total_hours}</td>
             <td class="px-5 py-3">₱${Number(pay.pay_amount).toFixed(2)}</td>
             <td class="px-5 py-3">${payStatusBadge(pay.pay_status)}</td>
         `;
-                table.appendChild(row);
-            });
-        }
+        table.appendChild(row);
+    });
+}
 
 function renderCalendar(container, attendanceMap) {
+    if (!container) return;
+    container.innerHTML = "";
+
     const year = new Date().getFullYear();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -94,8 +115,10 @@ function renderCalendar(container, attendanceMap) {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
-            const dayOfWeek = date.getDay(); // 0 = Sun, 6 = Sat
+
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            const dayOfWeek = date.getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isFuture = date > today;
 
@@ -120,4 +143,11 @@ function renderCalendar(container, attendanceMap) {
 
         container.appendChild(row);
     }
+}
+
+// 4. Added missing badge renderer helper
+function payStatusBadge(status) {
+    const isPaid = status?.toLowerCase() === "paid";
+    const bgClass = isPaid ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
+    return `<span class="px-2 py-1 text-xs font-semibold rounded ${bgClass}">${status ?? 'Pending'}</span>`;
 }
