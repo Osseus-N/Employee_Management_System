@@ -1,4 +1,4 @@
-const LOGIN_API = '/Employee_Management_System/index.php';
+const LOGIN_API = '/employee_management_system/login';
 
 document.addEventListener("DOMContentLoaded", function () {
     const loginForm = document.getElementById("loginForm");
@@ -6,18 +6,16 @@ document.addEventListener("DOMContentLoaded", function () {
     loginForm.addEventListener("submit", login);
 });
 
-//Pang access kung meron na yung tinayp ni user sa database
 async function login(event) {
     event.preventDefault();
 
-    if (!validateLogin()) return;
+    if (typeof validateLogin === 'function' && !validateLogin()) return;
 
     const email = document.getElementById("emailInput").value.trim();
     const password = document.getElementById("passwordInput").value;
     const errorEl = document.getElementById("loginError");
 
     try {
-
         const response = await fetch(LOGIN_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -25,13 +23,9 @@ async function login(event) {
             body: JSON.stringify({ email, password })
         });
 
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-
         const result = await response.json();
 
-        if (!result.success) {
+        if (!response.ok || result.status !== "success") {
             if (errorEl) {
                 errorEl.textContent = result.message || "Invalid email or password.";
                 errorEl.classList.remove("hidden");
@@ -41,12 +35,14 @@ async function login(event) {
             return;
         }
 
-        //Showing & Hiding UI
-        sessionStorage.setItem("role", result.data.role);
-        sessionStorage.setItem("emp_id", result.data.emp_id);
-        sessionStorage.setItem("firstname", result.data.firstname);
+        const role = result.data.role;
+        const user = result.data.user;
 
-        window.location.href = "/Employee_Management_System/router/dashboard.php";
+        sessionStorage.setItem("role", role);
+        sessionStorage.setItem("emp_id", user.emp_id);
+        sessionStorage.setItem("user", user.emp_firstname || user.name);
+
+        window.location.href = "/employee_management_system/dashboard";
 
     } catch (error) {
         console.error("Login request failed:", error);

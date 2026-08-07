@@ -1,32 +1,119 @@
 <?php
 
-use login\logInRepository;
-use login\logInService;
-use login\logInController;
+header("Content-Type: application/json");
 
-
-require_once __DIR__ . '/server/model/employee.php';
-require_once __DIR__ . '/server/response/responseController.php';
-require_once __DIR__ . '/server/login/logInRepository.php';
-require_once __DIR__ . '/server/login/logInService.php';
-require_once __DIR__ . '/server/login/logInController.php';
-
+// 1. Router & Base Setup
+require_once __DIR__ . '/server/router.php';
 require_once __DIR__ . '/server/database/database.php';
 require_once __DIR__ . '/server/session/sessionManager.php';
-require_once __DIR__ . '/server/admin/adminService.php';
-require_once __DIR__ . '/server/admin/adminRepository.php';
+require_once __DIR__ . '/server/response/responseController.php';
+
+// 2. Models & Repositories
+require_once __DIR__ . '/server/model/employee.php';
 require_once __DIR__ . '/server/employee/employeeRepository.php';
+require_once __DIR__ . '/server/payroll/payrollRepository.php';
+require_once __DIR__ . '/server/attendance/attendanceRepository.php';
+require_once __DIR__ . '/server/admin/adminRepository.php';
+require_once __DIR__ . '/server/login/logInRepository.php';
+
+// 3. Services
+require_once __DIR__ . '/server/payroll/payrollService.php';
+require_once __DIR__ . '/server/employee/employeeService.php';
+require_once __DIR__ . '/server/admin/adminService.php';
+require_once __DIR__ . '/server/login/logInService.php';
+require_once __DIR__ . '/server/attendance/attendanceService.php';
+
+// 4. Controllers
+require_once __DIR__ . '/server/admin/adminController.php';
+require_once __DIR__ . '/server/login/logInController.php';
+require_once __DIR__ . '/server/employee/employeeController.php';
+require_once __DIR__ . '/server/attendance/attendanceController.php';
+require_once __DIR__ . '/server/payroll/payrollController.php';
 
 $database = new Database();
-$employeeRepo = new \employee\employeeRepository($database);
-$loginRepo = new \login\loginRepository($database);
-$adminRepo = new \admin\adminRepository($database);
-$adminService = new \admin\adminService($adminRepo);
 
-$service = new \login\logInService($loginRepo, $employeeRepo);
-$controller = new \login\logInController($service,$adminRepo, $adminService);
+// Repositories
+$empRepo        = new \employee\employeeRepository($database);
+$payrollRepo    = new \payroll\payrollRepository($database);
+$attendanceRepo = new \attendance\attendanceRepository($database);
+$adminRepo      = new \admin\adminRepository($database);
+$loginRepo      = new \login\logInRepository($database);
 
-$controller->handleRequest();
+// Services
+$payrollService  = new \payroll\payrollService($payrollRepo, $attendanceRepo);
+$employeeService = new \employee\employeeService($empRepo);
+$adminService    = new \admin\adminService($adminRepo);
+$loginService    = new \login\logInService($loginRepo, $empRepo);
+$attendanceService = new \attendance\attendanceService($attendanceRepo);
 
+// Controllers
+$attendanceController = new attendance\attendanceController($attendanceService);
+$payrollController = new payroll\payrollController($payrollService,$employeeService,$attendanceService);
+$adminController = new \admin\adminController($adminService, $payrollService, $employeeService);
+$loginController = new \login\logInController($loginService, $adminRepo, $adminService);
+$employeeController = new employee\employeeController($employeeService,$attendanceController,$payrollController);
+$router = new router();
 
+// --- Auth Routes ---
+$router->get('/login', function() use ($loginController) {
+    $loginController->showLoginForm();
+});
 
+$router->get('/', function() use ($loginController) {
+    $loginController->showLoginForm();
+});
+
+$router->post('/login', function() use ($loginController) {
+    $loginController->login();
+});
+
+// -- Dashboard --
+$router->get('/dashboard', function() use ($loginController) {
+    \session\SessionManager::redirectByRole();
+});
+
+// -- Employee Routes --
+$router->get('/employee', function() use ($employeeController) {
+    $employeeController->showEmployeeDashBoard();
+    $employeeController->handleEmployees();
+});
+$router->put('/employee/action=update', function() use ($employeeController) {
+    $employeeController->handleUpdate();
+});
+
+// --- Admin & Payroll Routes ---
+$router->get('/admin', function() use ($adminController) {
+    $adminController->showDashboard();
+});
+
+$router->get('/admin/employees', function() use ($adminController) {
+    if (!empty($_GET['id'])) {
+        $adminController->getEmployeeById($_GET['id']);
+    } elseif (isset($_GET['search']) && !empty(trim($_GET['search']))) {
+        $adminController->searchEmployee($_GET['search']);
+    }
+});
+$router->post('/admin/employees', function() use ($adminController) {
+    $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    if (isset($data['action']) && $data['action'] === 'pay') {
+        $adminController->payEmployee($data);
+    } else {
+        $adminController->createEmployee($data);
+    }
+});
+
+$router->put('/admin/action=editEmployee??{emp_id}', function() use ($adminController) {
+    $adminController->editEmployee();
+});
+$router->delete('/admin/employees', function() use ($adminController) {
+    $adminController->deleteEmployee();
+});
+
+//logout
+
+$router->delete('/logout', function() use ($loginController) {
+    $loginController->logout();
+});
+
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

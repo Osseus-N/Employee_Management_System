@@ -1,0 +1,135 @@
+const EMPLOYEE_API = "/employee_management_system/employee";
+document.addEventListener("DOMContentLoaded", function () {
+    const name = sessionStorage.getItem("firstname");
+    if (name) document.getElementById("welcomeGreeting").textContent = "Welcome, " + name;
+
+    if (sessionStorage.getItem("role") === "admin") {
+        document.getElementById("adminReturnBtn").classList.remove("hidden");
+    }
+
+    loadProfile();
+    loadMyAttendance();
+    loadMyPayroll();
+
+    document.getElementById("profileForm").addEventListener("submit", saveProfile);
+});
+
+async function loadProfile() {
+    try {
+        const response = await fetch(EMPLOYEE_API, {credentials: "same-origin"});
+        const result = await response.json();
+
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+
+        const emp = result.data;
+        document.getElementById("empFirstName").value = emp.emp_firstname;
+        document.getElementById("empLastName").value = emp.emp_lastname;
+        document.getElementById("empContact").value = emp.emp_contact_number ?? "";
+        document.getElementById("empPosition").textContent = emp.emp_position;
+        document.getElementById("empStatus").textContent = emp.emp_status;
+    } catch (error) {
+        console.error(error);
+        alert("Cannot connect to server.");
+    }
+}
+async function loadMyPayroll() {
+    const table = document.getElementById("payrollTableBody");
+    if (!table) return;
+
+    try {
+        const response = await fetch(PAYROLL_SELF_API, { credentials: "same-origin" });
+        const result = await response.json();
+        table.innerHTML = "";
+
+        if (!result.success || result.data.length === 0) {
+            table.innerHTML = "<tr><td colspan='4' class='text-center py-6 text-gray-400'>No payroll records yet.</td></tr>";
+            return;
+        }
+
+        result.data.forEach(pay => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="px-5 py-3">${pay.pay_period_start} → ${pay.pay_period_end}</td>
+                <td class="px-5 py-3">${pay.pay_total_hours}</td>
+                <td class="px-5 py-3">₱${Number(pay.pay_amount).toFixed(2)}</td>
+                <td class="px-5 py-3">${payStatusBadge(pay.pay_status)}</td>
+            `;
+            table.appendChild(row);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+async function loadMyAttendance() {
+    const calendar = document.getElementById("attendanceCalendar");
+    if (!calendar) return;
+
+    try {
+        const response = await fetch(ATTENDANCE_SELF_API, { credentials: "same-origin" });
+        const result = await response.json();
+
+        calendar.innerHTML = "";
+
+        const attendanceMap = {};
+        if (result.success) {
+            result.data.forEach(att => {
+                attendanceMap[att.att_work_date] = att;
+            });
+        }
+
+        renderCalendar(calendar, attendanceMap);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function renderCalendar(container, attendanceMap) {
+    const year = new Date().getFullYear();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let month = 0; month < 12; month++) {
+        const row = document.createElement("div");
+        row.className = "attendance-row";
+
+        const label = document.createElement("span");
+        label.className = "attendance-month-label";
+        label.textContent = MONTH_NAMES[month];
+        row.appendChild(label);
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
+            const dayOfWeek = date.getDay(); // 0 = Sun, 6 = Sat
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isFuture = date > today;
+
+            const cell = document.createElement("span");
+            cell.title = dateStr;
+
+            if (isFuture) {
+                cell.className = "attendance-cell empty";
+            } else if (attendanceMap[dateStr]) {
+                cell.className = "attendance-cell present";
+                cell.title += " — Present";
+            } else if (isWeekend) {
+                cell.className = "attendance-cell weekend";
+                cell.title += " — Weekend";
+            } else {
+                cell.className = "attendance-cell absent";
+                cell.title += " — Absent";
+            }
+
+            row.appendChild(cell);
+        }
+
+        container.appendChild(row);
+    }
+}

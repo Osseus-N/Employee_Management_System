@@ -2,41 +2,44 @@
 
 namespace employee;
 
-use http\Encoding\Stream\Debrotli;
+use attendance\attendanceController;
+use payroll\payrollController;
 use response\responseController;
-use service\SessionManager;
+use session\sessionManager;
 
 class employeeController extends responseController
 {
-    private $service;
-    public function __construct(employeeService $service){
+    private employeeService $service;
+    private payrollController $payrollController;
+    private attendanceController $attController;
+
+    public function __construct(employeeService $service , attendanceController $attController,
+                                payrollController $payController){
+    $this->payrollController = $payController;
+    $this->attController = $attController;
     $this->service = $service;
     }
-
-    public function handleRequest(){
-
-        SessionManager::init();
-
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        switch($method){
-            case "GET":
-                $this->handleEmployees();
-                break;
-            case "PUT":
-                $this->handleUpdate();
-                break;
-        }
-    }
-
     public function handleEmployees(){
 
-        $emp_id = $_SESSION['emp_id'];
+        $emp_id = SessionManager::isLoggedIn();
 
         $user = $this->service->getEmployee($emp_id);
 
-        ($user) ? include __DIR__ . '/../../client/view/employee/employee_view.html'
-        : $this->error("Employee not found" , 404);
+        if (!$user) {
+            $this->error("Employee not found", 404);
+            return;
+        }
+
+        $attendance = $this->attController->getMonthlyAttendance($emp_id);
+        $payroll = $this->payrollController->getMonthlyPayroll($emp_id);
+
+        $data =[
+            'user'       => $user,
+            'attendance' => $attendance,
+            'payroll'    => $payroll
+        ];
+
+        $this->success("Logged in successfully", $data);
     }
 
     public function handleUpdate(){
@@ -51,8 +54,15 @@ class employeeController extends responseController
 
         ($user) ? $this->success("Employee updated successfully", $user)
                 : $this->error("Employee not found", 404);
-
         exit;
+    }
+
+    public function showEmployeeDashBoard()
+    {
+        $emp_id = SessionManager::isLoggedIn();
+
+        header("Content-Type: text/html; charset=UTF-8");
+        include __DIR__ . '/../../client/view/employee_view.html';
     }
 
 }

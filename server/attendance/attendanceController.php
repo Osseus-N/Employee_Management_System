@@ -2,8 +2,8 @@
 
 namespace attendance;
 
-use service\SessionManager;
 use response\responseController;
+use session\SessionManager;
 
 class attendanceController extends responseController
 {
@@ -14,24 +14,7 @@ class attendanceController extends responseController
         $this->service = $attendanceService;
     }
 
-    public function handleRequest(): void
-    {
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        switch ($method) {
-            case 'GET':
-                $this->getMonthlyAttendance();
-                break;
-            case 'POST':
-                $this->markAttendance();
-                break;
-            default:
-                $this->error('Method not allowed', 405);
-                break;
-        }
-    }
-
-    private function getMonthlyAttendance(): void
+    public function getMonthlyAttendance(): array
     {
         SessionManager::isLoggedIn();
 
@@ -39,12 +22,11 @@ class attendanceController extends responseController
         $month = isset($_GET['month']) ? (string)$_GET['month'] : null;
         $year  = isset($_GET['year']) ? (string)$_GET['year'] : null;
 
-        $attendanceData = $this->service->getMonthlyAttendance($empId, $month, $year);
+        return $this->service->getMonthlyAttendance($empId, $month, $year);
 
-        $this->success('Monthly attendance retrieved successfully', $attendanceData);
     }
 
-    private function markAttendance(): void
+    public function markAttendance(): void
     {
         SessionManager::isLoggedIn();
 

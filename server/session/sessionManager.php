@@ -1,8 +1,8 @@
 <?php
 
-namespace service;
+namespace session;
 
-class SessionManager
+class sessionManager
 {
     public static function init(): void
     {
@@ -23,7 +23,7 @@ class SessionManager
 
     public static function isLoggedIn(): bool
     {
-        session_start();
+        self::init();
 
         if(!isset($_SESSION["emp_id"])){
             http_response_code(401);
@@ -40,6 +40,27 @@ class SessionManager
         $_SESSION['emp_name'] = $name;
         $_SESSION['role']      = $role;
         session_regenerate_id(true);
+    }
+
+    public static function redirectByRole(?string $role = null): void
+    {
+        self::init();
+
+        $userRole = strtolower($role ?? $_SESSION['role'] ?? '');
+        $basePath = '/employee_management_system';
+
+        if (empty($userRole)) {
+            header("Location: {$basePath}/login");
+            exit;
+        }
+
+        if ($userRole === 'admin') {
+            header("Location: {$basePath}/admin");
+            exit;
+        }
+
+        header("Location: {$basePath}/employee");
+        exit;
     }
 
     public static function destroySession(): void

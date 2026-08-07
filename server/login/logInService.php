@@ -12,7 +12,8 @@ class logInService
         $this->logInRepository = $logInRepository;
         $this->employeeRepository = $employeeRepository;
     }
-    public function authenticateAccount(mixed $email, mixed $password){
+    public function authenticateAccount(mixed $email, mixed $password): ?array
+    {
 
         $acc = $this->logInRepository->isAccountExist($email);
 

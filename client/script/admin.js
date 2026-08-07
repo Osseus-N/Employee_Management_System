@@ -1,25 +1,13 @@
-const ADMIN_API = "../../../server/router/admin.php";
-const ATTENDANCE_API = "../../../server/router/attendance.php";
-const PAYROLL_API = "../../../server/router/payroll.php";
-const LOGOUT_API = "../../../server/router/index.php";
+const ADMIN_API = "../../../server/api/admin.php";
+const ATTENDANCE_API = "../../../server/api/attendance.php";
+const PAYROLL_API = "../../../server/api/payroll.php";
+const LOGOUT_API = "../../../server/api/index.php";
 
 let employees = [];
 let selectedID = null;
 
-// Security shit pang Access Guard
 if (sessionStorage.getItem("role") !== "admin") {
-    window.location.href = "../login/login.html";
-}
-
-async function logout() {
-    if (!confirm("Logout?")) return;
-    try {
-        await fetch(LOGOUT_API, { method: "DELETE", credentials: "same-origin" });
-    } catch (error) {
-        console.error(error);
-    }
-    sessionStorage.clear();
-    window.location.href = "../login/login.html";
+    window.location.href = "../view/login.html";
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -36,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("payrollForm").addEventListener("submit", processPayroll);
 });
 
-// LOAD OF EMPLOYEE
 async function loadEmployees() {
     try {
         const response = await fetch(ADMIN_API, { credentials: "same-origin" });
@@ -55,7 +42,6 @@ async function loadEmployees() {
     }
 }
 
-//DISPLAY EMPLOYEE
 function displayEmployees(data) {
     const table = document.getElementById("employeeTableBody");
     table.innerHTML = "";
@@ -386,7 +372,28 @@ async function markPaid(payId) {
         alert("Unable to update payroll.");
     }
 }
+document.addEventListener("DOMContentLoaded", function () {
+    const btnMyProfile = document.getElementById("btnMyProfile");
+    if (!btnMyProfile) return;
+    btnMyProfile.addEventListener("click", goToMyProfile);
+});
 
+function goToMyProfile() {
+    window.location.href = "/Employee_Management_System/router/employee.php";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    showAdminReturnIfApplicable();
+});
+
+function showAdminReturnIfApplicable() {
+    const role = sessionStorage.getItem("role");
+    const adminReturnBtn = document.getElementById("adminReturnBtn");
+
+    if (role === "admin" && adminReturnBtn) {
+        adminReturnBtn.classList.remove("d-none");
+    }
+}
 // Pang Refresh
 async function refreshDashboard() {
     await loadEmployees();

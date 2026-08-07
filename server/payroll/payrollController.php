@@ -2,12 +2,10 @@
 
 namespace payroll;
 
-use attendance\attendanceController;
 use attendance\attendanceService;
-use employee\employeeController;
 use employee\employeeService;
 use response\responseController;
-use service\SessionManager;
+use session\SessionManager;
 
 class payrollController extends responseController
 {
@@ -23,24 +21,7 @@ class payrollController extends responseController
     $this->attendance = $attService;
 
     }
-    public function handleRequest(){
-
-        header("Content-type: application/json");
-        $method = $_SERVER["REQUEST_METHOD"];
-
-        switch ($method) {
-            case 'GET':
-                $this->getMonthlyPayroll();
-                break;
-            case 'POST':
-                $this->payEmployee();
-                break;
-            default:
-                $this->error('Invalid request',405);
-                break;
-        }
-    }
-    private function getMonthlyPayroll(){
+    public function getMonthlyPayroll(){
 
         header("Content-type: application/json");
 
@@ -48,11 +29,9 @@ class payrollController extends responseController
 
         $emp_Id = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
 
-        $payroll = $this->payrollService->getMonthlyPayroll($emp_Id);
-
-        $this->success($payroll);
+        return $this->payrollService->getMonthlyPayroll($emp_Id);
     }
-    private function payEmployee(){
+    public function payEmployee(){
 
         header("Content-type: application/json");
 
