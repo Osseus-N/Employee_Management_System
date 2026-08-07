@@ -1,6 +1,5 @@
-const PAYROLL_SELF_API = "../../../server/api/payroll.php";
+const PAYROLL_SELF_API = "/employee_management_system/employee/payroll";
 
-//Para lang sa status
 function payStatusBadge(status) {
     const colors = {
         Pending: "bg-yellow-100 text-yellow-700",

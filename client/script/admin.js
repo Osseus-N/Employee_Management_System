@@ -1,7 +1,6 @@
-const ADMIN_API = "../../../server/api/admin.php";
-const ATTENDANCE_API = "../../../server/api/attendance.php";
-const PAYROLL_API = "../../../server/api/payroll.php";
-const LOGOUT_API = "../../../server/api/index.php";
+const ADMIN_API        = "/employee_management_system/admin/employees";
+const ATTENDANCE_API    = "/employee_management_system/attendance/self";
+const PAYROLL_API       = "/employee_management_system/payroll/self";
 
 let employees = [];
 let selectedID = null;
@@ -24,23 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("payrollForm").addEventListener("submit", processPayroll);
 });
 
-async function loadEmployees() {
-    try {
-        const response = await fetch(ADMIN_API, { credentials: "same-origin" });
-        const result = await response.json();
-
-        if (result.success) {
-            employees = result.data;
-            displayEmployees(employees);
-            populatePayrollDropdown();
-        } else {
-            alert(result.message);
-        }
-    } catch (error) {
-        console.error(error);
-        alert("Cannot connect to server.");
-    }
-}
 
 function displayEmployees(data) {
     const table = document.getElementById("employeeTableBody");

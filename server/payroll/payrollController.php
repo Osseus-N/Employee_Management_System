@@ -21,15 +21,11 @@ class payrollController extends responseController
     $this->attendance = $attService;
 
     }
-    public function getMonthlyPayroll(){
+    public function getMonthlyPayroll($emp_id){
 
         header("Content-type: application/json");
 
-        SessionManager::isLoggedIn();
-
-        $emp_Id = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
-
-        return $this->payrollService->getMonthlyPayroll($emp_Id);
+        return $this->payrollService->getMonthlyPayroll($emp_id);
     }
     public function payEmployee(){
 

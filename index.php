@@ -1,7 +1,5 @@
 <?php
 
-header("Content-Type: application/json");
-
 // 1. Router & Base Setup
 require_once __DIR__ . '/server/router.php';
 require_once __DIR__ . '/server/database/database.php';
@@ -40,21 +38,21 @@ $adminRepo      = new \admin\adminRepository($database);
 $loginRepo      = new \login\logInRepository($database);
 
 // Services
-$payrollService  = new \payroll\payrollService($payrollRepo, $attendanceRepo);
-$employeeService = new \employee\employeeService($empRepo);
-$adminService    = new \admin\adminService($adminRepo);
-$loginService    = new \login\logInService($loginRepo, $empRepo);
+$payrollService    = new \payroll\payrollService($payrollRepo, $attendanceRepo);
+$employeeService   = new \employee\employeeService($empRepo);
+$adminService      = new \admin\adminService($adminRepo);
+$loginService      = new \login\logInService($loginRepo, $empRepo);
 $attendanceService = new \attendance\attendanceService($attendanceRepo);
 
 // Controllers
-$attendanceController = new attendance\attendanceController($attendanceService);
-$payrollController = new payroll\payrollController($payrollService,$employeeService,$attendanceService);
-$adminController = new \admin\adminController($adminService, $payrollService, $employeeService);
-$loginController = new \login\logInController($loginService, $adminRepo, $adminService);
-$employeeController = new employee\employeeController($employeeService,$attendanceController,$payrollController);
+$attendanceController = new \attendance\attendanceController($attendanceService);
+$payrollController     = new \payroll\payrollController($payrollService, $employeeService, $attendanceService);
+$adminController       = new \admin\adminController($adminService, $payrollService, $employeeService);
+$loginController       = new \login\logInController($loginService, $adminRepo, $adminService);
+$employeeController    = new \employee\employeeController($employeeService, $attendanceController, $payrollController);
+
 $router = new router();
 
-// --- Auth Routes ---
 $router->get('/login', function() use ($loginController) {
     $loginController->showLoginForm();
 });
@@ -67,23 +65,36 @@ $router->post('/login', function() use ($loginController) {
     $loginController->login();
 });
 
-// -- Dashboard --
-$router->get('/dashboard', function() use ($loginController) {
+$router->delete('/logout', function() use ($loginController) {
+    $loginController->logout();
+});
+
+$router->get('/dashboard', function() {
     \session\SessionManager::redirectByRole();
 });
 
-// -- Employee Routes --
 $router->get('/employee', function() use ($employeeController) {
     $employeeController->showEmployeeDashBoard();
+});
+
+$router->get('/employee/data', function() use ($employeeController) {
     $employeeController->handleEmployees();
 });
-$router->put('/employee/action=update', function() use ($employeeController) {
+
+$router->put('/employee', function() use ($employeeController) {
     $employeeController->handleUpdate();
 });
 
-// --- Admin & Payroll Routes ---
+$router->get('/attendance/self', function() use ($attendanceController) {
+    $attendanceController->getSelfAttendance(); // confirm actual method name
+});
+
+$router->get('/payroll/self', function() use ($payrollController) {
+    $payrollController->getSelfPayroll(); // confirm actual method name
+});
+
 $router->get('/admin', function() use ($adminController) {
-    $adminController->showDashboard();
+    $adminController->showDashboard(); // HTML shell only
 });
 
 $router->get('/admin/employees', function() use ($adminController) {
@@ -91,8 +102,11 @@ $router->get('/admin/employees', function() use ($adminController) {
         $adminController->getEmployeeById($_GET['id']);
     } elseif (isset($_GET['search']) && !empty(trim($_GET['search']))) {
         $adminController->searchEmployee($_GET['search']);
+    } else {
+        $adminController->getAllEmployee();
     }
 });
+
 $router->post('/admin/employees', function() use ($adminController) {
     $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
@@ -103,17 +117,12 @@ $router->post('/admin/employees', function() use ($adminController) {
     }
 });
 
-$router->put('/admin/action=editEmployee??{emp_id}', function() use ($adminController) {
+$router->put('/admin/employees', function() use ($adminController) {
     $adminController->editEmployee();
 });
+
 $router->delete('/admin/employees', function() use ($adminController) {
     $adminController->deleteEmployee();
-});
-
-//logout
-
-$router->delete('/logout', function() use ($loginController) {
-    $loginController->logout();
 });
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

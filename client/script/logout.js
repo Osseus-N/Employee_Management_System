@@ -7,14 +7,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
 async function logout() {
     try {
-        await fetch(LOGOUT_API, {
+        const response = await fetch(LOGOUT_API, {
             method: "DELETE",
             credentials: "same-origin"
         });
-    } catch (error) {
-        console.error("Logout request failed:", error);
-    }
+        const result = await response.json();
 
-    sessionStorage.clear();
-    window.location.href = "/employee_management_system/index.php";
+        sessionStorage.clear();
+
+        if (result.success) {
+            window.location.href = "/employee_management_system";
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Unable to log out.");
+    }
 }

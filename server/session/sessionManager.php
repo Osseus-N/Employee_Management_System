@@ -31,7 +31,7 @@ class sessionManager
             exit;
         }
 
-        return isset($_SESSION['emp_id']);
+        return $_SESSION['emp_id'];
 
     }
     public static function setUserSession(int $id, string $name, string $role): void

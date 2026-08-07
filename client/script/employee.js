@@ -1,4 +1,4 @@
-const EMPLOYEE_API = "Employee_Management_System/employee.php";
+const EMPLOYEE_API = "Employee_Management_System/employee/?action=edit";
 
 if (!sessionStorage.getItem("role")) {
     window.location.href = "../view/login.html";

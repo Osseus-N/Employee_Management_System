@@ -4,6 +4,7 @@ namespace login;
 
 use admin\adminRepository;
 use admin\adminService;
+use JetBrains\PhpStorm\NoReturn;
 use response\responseController;
 use session\sessionManager;
 
@@ -71,6 +72,7 @@ class logInController extends ResponseController
         include __DIR__ . '/../../client/view/login.html';
     }
 
+    #[NoReturn]
     public function logout(): void
     {
         SessionManager::init();

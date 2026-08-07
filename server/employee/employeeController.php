@@ -2,10 +2,10 @@
 
 namespace employee;
 
-use attendance\attendanceController;
-use payroll\payrollController;
-use response\responseController;
-use session\sessionManager;
+    use attendance\attendanceController;
+    use payroll\payrollController;
+    use response\responseController;
+    use session\sessionManager;
 
 class employeeController extends responseController
 {
@@ -15,9 +15,9 @@ class employeeController extends responseController
 
     public function __construct(employeeService $service , attendanceController $attController,
                                 payrollController $payController){
-    $this->payrollController = $payController;
-    $this->attController = $attController;
-    $this->service = $service;
+        $this->payrollController = $payController;
+        $this->attController = $attController;
+        $this->service = $service;
     }
     public function handleEmployees(){
 
@@ -39,21 +39,23 @@ class employeeController extends responseController
             'payroll'    => $payroll
         ];
 
-        $this->success("Logged in successfully", $data);
+        $this->success("Employee data retrieved successfully", $data);
     }
 
     public function handleUpdate(){
+        $emp_id = SessionManager::isLoggedIn();
 
-        $data = json_decode(file_get_contents("php://input"));
+        if (!$emp_id) {
+            $this->error("Not logged in", 401);
+            return;
+        }
 
-        SessionManager::isLoggedIn();
-
-        $emp_id = $_SESSION['emp_id'];
+        $data = json_decode(file_get_contents("php://input"), true);
 
         $user = $this->service->editEmployee($emp_id, $data);
 
         ($user) ? $this->success("Employee updated successfully", $user)
-                : $this->error("Employee not found", 404);
+            : $this->error("Employee not found", 404);
         exit;
     }
 

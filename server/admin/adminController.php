@@ -27,9 +27,20 @@ class adminController extends responseController
     public function showDashboard(): void
     {
         SessionManager::init();
-        include __DIR__ . '/../../client/view/admin_view.html';
+        $emp_id = SessionManager::isLoggedIn();
 
-       $this->getAllEmployee();
+        if (!$emp_id) {
+            header("Location: /employee_management_system/login");
+            exit;
+        }
+
+        if (($_SESSION['role'] ?? null) !== 'admin') {
+            header("Location: /employee_management_system/employee");
+            exit;
+        }
+
+        header("Content-Type: text/html; charset=UTF-8");
+        include __DIR__ . '/../../client/view/admin_view.html';
     }
 
     public function getAllEmployee(): void
