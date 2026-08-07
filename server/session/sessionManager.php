@@ -2,6 +2,8 @@
 
 namespace session;
 
+use JetBrains\PhpStorm\NoReturn;
+
 class sessionManager
 {
     public static function init(): void
@@ -42,6 +44,7 @@ class sessionManager
         session_regenerate_id(true);
     }
 
+    #[NoReturn]
     public static function redirectByRole(?string $role = null): void
     {
         self::init();

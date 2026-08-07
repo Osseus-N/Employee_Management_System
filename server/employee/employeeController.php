@@ -63,6 +63,11 @@ class employeeController extends responseController
     {
         $emp_id = SessionManager::isLoggedIn();
 
+        if (!$emp_id) {
+            header("Location: /employee_management_system/login");
+            exit;
+        }
+
         header("Content-Type: text/html; charset=UTF-8");
         include __DIR__ . '/../../client/view/employee_view.html';
     }

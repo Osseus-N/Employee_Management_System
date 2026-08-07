@@ -1,11 +1,8 @@
 const LOGIN_API = '/employee_management_system/login';
 
-document.addEventListener("DOMContentLoaded", function () {
-    const loginForm = document.getElementById("loginForm");
-    if (!loginForm) return;
-    loginForm.addEventListener("submit", login);
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("loginForm")?.addEventListener("submit", login);
 });
-
 async function login(event) {
     event.preventDefault();
 
@@ -40,9 +37,13 @@ async function login(event) {
 
         sessionStorage.setItem("role", role);
         sessionStorage.setItem("emp_id", user.emp_id);
-        sessionStorage.setItem("user", user.emp_firstname || user.name);
+        sessionStorage.setItem("user", user.emp_firstname);
 
-        window.location.href = "/employee_management_system/dashboard";
+        if (role === "admin") {
+            window.location.replace("/employee_management_system/admin");
+        } else{
+            window.location.replace("/employee_management_system/employee");
+        }
 
     } catch (error) {
         console.error("Login request failed:", error);

@@ -7,7 +7,6 @@ const isLoginPage = currentPath === "/employee_management_system/" || currentPat
 if (!sessionStorage.getItem("role") && !isLoginPage) {
     window.location.href = "/employee_management_system/logout";
 }
-
 document.addEventListener("DOMContentLoaded", function () {
     const name = sessionStorage.getItem("firstname");
     if (name && document.getElementById("welcomeGreeting")) {
@@ -37,7 +36,19 @@ async function loadDashboard() {
             method: "GET",
             credentials: "same-origin"
         });
+
+        if (response.status === 401 || response.status === 403) {
+            sessionStorage.clear();
+            window.location.href = "/employee_management_system/login";
+            return;
+        }
+
         const result = await response.json();
+
+        if (result.success && result.data.user) {
+            sessionStorage.setItem("role", result.data.user.role || "employee");
+            sessionStorage.setItem("user", result.data.user.emp_firstname);
+        }
 
         if (!result.success) {
             alert(result.message);
