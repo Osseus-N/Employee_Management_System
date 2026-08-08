@@ -85,14 +85,6 @@ $router->put('/employee', function() use ($employeeController) {
     $employeeController->handleUpdate();
 });
 
-$router->get('/attendance/self', function() use ($attendanceController) {
-    $attendanceController->getSelfAttendance(); // confirm actual method name
-});
-
-$router->get('/payroll/self', function() use ($payrollController) {
-    $payrollController->getSelfPayroll(); // confirm actual method name
-});
-
 $router->get('/admin', function() use ($adminController) {
     $adminController->showDashboard(); // HTML shell only
 });

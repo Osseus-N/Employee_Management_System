@@ -9,6 +9,7 @@ class Employee
     private string $empLastname;
     private string $empGender;
     private ?string $empDateOfBirth;
+    private string $empAddress;
     private ?string $empContactNumber;
     private string $empPosition;
     private float $empHourlyRate;
@@ -22,9 +23,10 @@ class Employee
         string $empPosition,
         float $empHourlyRate = 0.00,
         ?string $empDateOfBirth = null,
+        ?string $empAddress = null,
         ?string $empContactNumber = null,
-        ?int $empId = null,
         string $empStatus = 'Active',
+        ?int $empId = null,
         ?string $empCreatedAt = null
     ) {
         $this->empId = $empId;
@@ -34,6 +36,7 @@ class Employee
         $this->empPosition = $empPosition;
         $this->empHourlyRate = $empHourlyRate;
         $this->empDateOfBirth = $empDateOfBirth;
+        $this->empAddress = $empAddress;
         $this->empContactNumber = $empContactNumber;
         $this->empStatus = $empStatus;
         $this->empCreatedAt = $empCreatedAt;
@@ -50,6 +53,7 @@ class Employee
     public function getEmpStatus(): string { return $this->empStatus; }
     public function getEmpCreatedAt(): ?string { return $this->empCreatedAt; }
 
+    public function getAddress(): ?string { return $this->empAddress; }
     public function toArray(): array
     {
         return [
@@ -58,6 +62,7 @@ class Employee
             'emp_lastname'       => $this->empLastname,
             'emp_gender'         => $this->empGender,
             'emp_date_of_birth'  => $this->empDateOfBirth,
+            'emp_address'        => $this->empAddress,
             'emp_contact_number' => $this->empContactNumber,
             'emp_position'       => $this->empPosition,
             'emp_hourly_rate'    => $this->empHourlyRate,

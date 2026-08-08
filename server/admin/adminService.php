@@ -14,7 +14,6 @@ class adminService
 
     public function getAllEmployee(){
         return $this->adminRepository->getAllEmployees();
-
     }
     public function searchEmployee(string $search):array{
 
@@ -33,11 +32,15 @@ class adminService
     public function createEmployee(array $data)
     {
 
-        if (empty($data['emp_firstname']) || empty($data['emp_lastname']) || empty($data['user_email']) || empty($data['user_password'])) {
+        if($this->adminRepository->emailExists($data['acc_email'])){
+            throw new \Exception("Email Already Exists");
+        }
+
+        if (empty($data['emp_firstname']) || empty($data['emp_lastname']) || empty($data['acc_email']) || empty($data['acc_password'])) {
             throw new \InvalidArgumentException("Missing mandatory fields: firstname, lastname, email, or password.");
         }
 
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($data['acc_email'], FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("Invalid email format.");
         }
 
@@ -46,13 +49,15 @@ class adminService
         }
 
         $employee = new Employee(
-            $data['firstname'],
-            $data['lastname'],
-            $data['gender'],
-            $data['position'],
-            (float) ($data['hourly_rate'] ?? 0.00),
-            $data['dob'] ?? null,
-            $data['contact'] ?? null
+            $data['emp_firstname'] ,
+            $data['emp_lastname'] ,
+            $data['emp_gender'] ?? '',
+            $data['emp_position'] ?? '',
+            (float) ($data['emp_hourly_rate'] ?? 0.00),
+            $data['emp_date_of_birth'] ?? null,
+            $data['emp_address'] ?? null,
+            $data['emp_contact_number'] ?? null,
+            $data['emp_status'] ?? 'Active',
         );
          return $this->adminRepository->createEmployee($employee, trim($data['email']), $data['password']);
     }
@@ -92,6 +97,9 @@ class adminService
         return true;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function createDefaultAdmin()
     {
         $defaultAdminEmployee = new Employee(
@@ -101,6 +109,7 @@ class adminService
             empPosition:       'admin',
             empHourlyRate:     0.00,
             empDateOfBirth:    '2000-01-01',
+            empAddress:        'Manila City',
             empContactNumber:  '0123456789',
             empStatus:         'Active',
         );
@@ -114,6 +123,6 @@ class adminService
             $defaultAdminPassword
         );
 
-        header('Location:index.php');
+        header('Location: /employee_management_system/');
     }
 }

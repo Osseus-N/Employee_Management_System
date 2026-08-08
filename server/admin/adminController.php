@@ -39,7 +39,7 @@ class adminController extends responseController
             exit;
         }
 
-        header("Content-Type: text/html; charset=UTF-8");
+        header("Content-Type : text/html; charset=UTF-8");
         include __DIR__ . '/../../client/view/admin_view.html';
     }
 
@@ -103,7 +103,7 @@ class adminController extends responseController
         }
 
         // Basic required field validation
-        if (empty($data['firstname']) || empty($data['lastname']) || empty($data['email'])) {
+        if (empty($data['emp_firstname']) || empty($data['emp_lastname']) || empty($data['acc_email'])) {
             $this->error('Missing required fields: firstname, lastname, email.', 400);
             return;
         }

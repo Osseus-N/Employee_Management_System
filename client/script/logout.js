@@ -1,7 +1,6 @@
 const LOGOUT_API = "/employee_management_system/logout";
 document.addEventListener("DOMContentLoaded", function () {
     const confirmLogoutBtn = document.getElementById("btnLogout");
-    if (!confirmLogoutBtn) return;
     confirmLogoutBtn.addEventListener("click", logout);
 });
 

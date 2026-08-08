@@ -14,8 +14,6 @@ class logInRepository
         $this->db = $db;
     }
 
-
-
     public function isAccountExist($acc_email){
 
         $data = $this->db->select('accounts' , "*" , ['acc_email' => $acc_email]);

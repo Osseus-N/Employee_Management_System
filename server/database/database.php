@@ -64,7 +64,7 @@ class Database
 
             $stmt->execute();
 
-            return true;
+            return $stmt->insert_id;
 
         } catch (Exception $e) {
 

@@ -23,6 +23,11 @@ class employeeController extends responseController
 
         $emp_id = SessionManager::isLoggedIn();
 
+        if (!$emp_id) {
+            $this->error("Not logged in", 401);
+            return;
+        }
+
         $user = $this->service->getEmployee($emp_id);
 
         if (!$user) {
@@ -30,7 +35,7 @@ class employeeController extends responseController
             return;
         }
 
-        $attendance = $this->attController->getMonthlyAttendance($emp_id);
+        $attendance = $this->attController->getMonthlyAttendance();
         $payroll = $this->payrollController->getMonthlyPayroll($emp_id);
 
         $data =[

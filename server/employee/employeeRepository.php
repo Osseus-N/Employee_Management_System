@@ -13,11 +13,19 @@ class employeeRepository
         $this->conn = $this->db->connect();
     }
 
-    public function getEmployee($emp_id){
+    public function getEmployee($emp_id): false|array|null
+    {
 
         $data = $this->db->select('employees' , "*", ['emp_id' => $emp_id]);
         return $data->fetch_assoc();
 
+    }
+    public function getAccountEmail($emp_id){
+
+        $data = $this->db->select('accounts' , "*", ['emp_id' => $emp_id]);
+        $result = $data->fetch_assoc();
+
+        return $result['acc_email'] ?? null;
     }
     public function editEmployee($table, $data, $where){
 

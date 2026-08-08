@@ -99,4 +99,4 @@ body {
 .attendance-cell.present  { background-color: #26a641; }
 .attendance-cell.absent   { background-color: #f85149; }
 .attendance-cell.weekend  { background-color: #d29922; }
-.attendance-cell.empty    { background-color: transparent; }
+.attendance-cell.empty    { background-color: #1b5e20 }

@@ -22,7 +22,7 @@ async function login(event) {
 
         const result = await response.json();
 
-        if (!response.ok || result.status !== "success") {
+        if (!response.ok || !result.success) {
             if (errorEl) {
                 errorEl.textContent = result.message || "Invalid email or password.";
                 errorEl.classList.remove("hidden");
@@ -38,6 +38,7 @@ async function login(event) {
         sessionStorage.setItem("role", role);
         sessionStorage.setItem("emp_id", user.emp_id);
         sessionStorage.setItem("user", user.emp_firstname);
+
 
         if (role === "admin") {
             window.location.replace("/employee_management_system/admin");

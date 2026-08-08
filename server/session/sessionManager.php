@@ -23,7 +23,7 @@ class sessionManager
         }
     }
 
-    public static function isLoggedIn(): bool
+    public static function isLoggedIn()
     {
         self::init();
 

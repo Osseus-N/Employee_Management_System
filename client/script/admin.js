@@ -1,54 +1,87 @@
-const ADMIN_API        = "/employee_management_system/admin/employees";
-const ATTENDANCE_API    = "/employee_management_system/attendance/self";
-const PAYROLL_API       = "/employee_management_system/payroll/self";
+const ADMIN_API = "/employee_management_system/admin/employees";
+const PAYROLL_API = "/employee_management_system/payroll/self";
 
 let employees = [];
 let selectedID = null;
+let pendingAction = null;
 
-if (!sessionStorage.getItem("role") && !isLoginPage) {
-    window.location.href = "/employee_management_system/logout";
-}
+let collapseFormInstance = null;
+let confirmationModalInstance = null;
+let payModalInstance = null;
+
 document.addEventListener("DOMContentLoaded", function () {
-    const name = sessionStorage.getItem("firstname");
-    if (name) document.getElementById("welcomeName").textContent = name;
+    collapseFormInstance = new bootstrap.Collapse(document.getElementById("createEmployeeForm"), { toggle: false });
+    confirmationModalInstance = new bootstrap.Modal(document.getElementById("confirmationModal"));
+    payModalInstance = new bootstrap.Modal(document.getElementById("payEmployeeModal"));
 
-    refreshDashboard();
+    loadEmployees();
 
-    document.getElementById("searchEmployee").addEventListener("keyup", searchEmployee);
-    document.getElementById("btnRefresh").addEventListener("click", refreshDashboard);
-    document.getElementById("toggleEmployeeForm").addEventListener("click", showCreateForm);
-    document.getElementById("btnSave").addEventListener("click", onSave);
-    document.getElementById("btnCancel").addEventListener("click", hideForm);
-    document.getElementById("payrollForm").addEventListener("submit", processPayroll);
+    document.getElementById("searchInput").addEventListener("keyup", searchEmployee);
+    document.getElementById("employeeForm").addEventListener("submit", handleFormSubmit);
+    document.getElementById("btnResetForm").addEventListener("click", resetEmployeeForm);
+    document.getElementById("btnCancelForm").addEventListener("click", hideEmployeeForm);
+    document.getElementById("btnToggleCreateForm").addEventListener("click", prepareCreateForm);
+    document.getElementById("payEmployeeForm").addEventListener("submit", handlePayrollSubmit);
+    document.getElementById("btnConfirmAction").addEventListener("click", executeConfirmedAction);
+
+    const btnMyProfile = document.getElementById("btnMyProfile");
+    if (btnMyProfile) {
+        btnMyProfile.addEventListener("click", () => {
+            window.location.href = "/employee_management_system/employee";
+        });
+    }
 });
+
+async function loadEmployees() {
+    try {
+        const response = await fetch(ADMIN_API, { credentials: "same-origin" });
+        const result = await response.json();
+
+        if (result.success) {
+            employees = result.data;
+            displayEmployees(employees);
+            populatePayrollDropdown();
+        } else {
+            alert(result.message || "Failed to load employees.");
+        }
+    } catch (error) {
+        console.error("Error loading employees:", error);
+    }
+}
 
 
 function displayEmployees(data) {
     const table = document.getElementById("employeeTableBody");
     table.innerHTML = "";
 
-    if (data.length === 0) {
-        table.innerHTML = "<tr><td colspan='11' class='text-center py-6 text-gray-400'>No employees found</td></tr>";
+    if (!data || data.length === 0) {
+        table.innerHTML = "<tr><td colspan='13' class='text-center py-4 text-muted'>No employees found</td></tr>";
         return;
     }
 
     data.forEach(emp => {
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td class="px-4 py-3">${escapeHtml(emp.emp_firstname)}</td>
-            <td class="px-4 py-3">${escapeHtml(emp.emp_lastname)}</td>
-            <td class="px-4 py-3">${emp.emp_date_of_birth}</td>
-            <td class="px-4 py-3">${escapeHtml(emp.emp_contact_number ?? "")}</td>
-            <td class="px-4 py-3">${escapeHtml(emp.emp_gender)}</td>
-            <td class="px-4 py-3">${escapeHtml(emp.emp_position)}</td>
-            <td class="px-4 py-3">₱${Number(emp.emp_hourly_rate).toFixed(2)}</td>
-            <td class="px-4 py-3">${statusBadge(emp.emp_status)}</td>
-            <td class="px-4 py-3 text-center text-gray-500 text-sm">Use "Process Payroll" below</td>
-            <td class="px-4 py-3 text-center">
-                <button class="text-blue-600 hover:underline" onclick="selectEmployee(${emp.emp_id})">Edit</button>
+            <td class="fw-bold">${emp.emp_id}</td>
+            <td>${escapeHtml(emp.emp_firstname)}</td>
+            <td>${escapeHtml(emp.emp_lastname)}</td>
+            <td>${emp.emp_date_of_birth || "—"}</td>
+            <td>${escapeHtml(emp.acc_email || emp.email || "—")}</td>
+            <td>${escapeHtml(emp.emp_contact_number || "—")}</td>
+            <td>${escapeHtml(emp.emp_gender)}</td>
+            <td><span class="badge bg-secondary">${escapeHtml(emp.emp_position)}</span></td>
+            <td>₱${Number(emp.emp_hourly_rate).toFixed(2)}</td>
+            <td>${statusBadge(emp.emp_status)}</td>
+            <td>${escapeHtml(emp.emp_address || "—")}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-primary" onclick="selectEmployee(${emp.emp_id})">
+                    <i class="bi bi-pencil-square"></i> Edit
+                </button>
             </td>
-            <td class="px-4 py-3 text-center">
-                <button class="text-red-600 hover:underline" onclick="deleteEmployee(${emp.emp_id})">Delete</button>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-danger" onclick="promptDeleteEmployee(${emp.emp_id})">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
             </td>
         `;
         table.appendChild(row);
@@ -57,11 +90,11 @@ function displayEmployees(data) {
 
 function statusBadge(status) {
     const colors = {
-        Active: "bg-green-100 text-green-700",
-        Inactive: "bg-yellow-100 text-yellow-700",
-        Terminated: "bg-red-100 text-red-700"
+        Active: "bg-success",
+        Inactive: "bg-warning text-dark",
+        Terminated: "bg-danger"
     };
-    return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${colors[status] || ""}">${status}</span>`;
+    return `<span class="badge ${colors[status] || "bg-secondary"}">${status}</span>`;
 }
 
 function escapeHtml(str) {
@@ -71,72 +104,92 @@ function escapeHtml(str) {
 }
 
 function searchEmployee() {
-    const keyword = document.getElementById("searchEmployee").value.toLowerCase();
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
     const filtered = employees.filter(emp =>
-        emp.emp_firstname.toLowerCase().includes(keyword) ||
-        emp.emp_lastname.toLowerCase().includes(keyword) ||
-        emp.emp_position.toLowerCase().includes(keyword) ||
-        emp.emp_status.toLowerCase().includes(keyword)
+        emp.emp_firstname?.toLowerCase().includes(keyword) ||
+        emp.emp_lastname?.toLowerCase().includes(keyword) ||
+        emp.emp_position?.toLowerCase().includes(keyword) ||
+        emp.emp_status?.toLowerCase().includes(keyword)
     );
     displayEmployees(filtered);
 }
 
-// Creation of Form
-function showCreateForm() {
+// 2. FORM SWITCHING & PRE-POPULATION (PUT METHOD PREPARATION)
+function prepareCreateForm() {
     selectedID = null;
-    document.getElementById("formTitle").textContent = "Create New Employee";
+    document.getElementById("formTitle").textContent = "Add New Employee";
+    document.getElementById("btnSubmitForm").textContent = "Submit";
+    document.getElementById("passwordContainer").style.display = "block";
+    document.getElementById("password").required = true;
     document.getElementById("employeeForm").reset();
-    document.getElementById("male").checked = true;
-    document.getElementById("status").value = "Active";
-    setLoginFieldsVisible(true);
-    document.getElementById("createEmployeeForm").classList.remove("hidden");
 }
 
-//Pang Select ng Employee
 function selectEmployee(id) {
-    selectedID = id;
     const emp = employees.find(e => e.emp_id == id);
     if (!emp) return;
 
-    document.getElementById("formTitle").textContent = "Edit Employee";
-    document.getElementById("firstName").value = emp.emp_firstname;
-    document.getElementById("lastName").value = emp.emp_lastname;
-    document.getElementById("dob").value = emp.emp_date_of_birth;
-    document.getElementById("contactNumber").value = emp.emp_contact_number ?? "";
-    document.getElementById("position").value = emp.emp_position;
-    document.getElementById("hourlyRate").value = emp.emp_hourly_rate;
-    document.getElementById("status").value = emp.emp_status;
+    selectedID = id;
+    document.getElementById("formTitle").textContent = `Edit Employee (ID: ${emp.emp_id})`;
+    document.getElementById("btnSubmitForm").textContent = "Update Employee";
 
-    if (emp.emp_gender === "Male") document.getElementById("male").checked = true;
-    else if (emp.emp_gender === "Female") document.getElementById("female").checked = true;
-    else document.getElementById("other").checked = true;
+    // Pre-populate fields
+    populateFormFields(emp);
 
-    setLoginFieldsVisible(false); // editing never touches login credentials here
-    document.getElementById("createEmployeeForm").classList.remove("hidden");
+    // Hide password field for PUT mode
+    document.getElementById("passwordContainer").style.display = "none";
+    document.getElementById("password").required = false;
+
+    collapseFormInstance.show();
 }
 
-function setLoginFieldsVisible(visible) {
-    ["loginFieldsWrap", "passwordFieldWrap", "roleFieldWrap"].forEach(id => {
-        document.getElementById(id).classList.toggle("hidden", !visible);
-    });
-}
+function populateFormFields(emp) {
+    document.getElementById("firstName").value = emp.emp_firstname || "";
+    document.getElementById("lastName").value = emp.emp_lastname || "";
+    document.getElementById("dob").value = emp.emp_date_of_birth || "";
+    document.getElementById("email").value = emp.acc_email || emp.email || "";
+    document.getElementById("contactNumber").value = emp.emp_contact_number || "";
+    document.getElementById("position").value = emp.emp_position || "Employee";
+    document.getElementById("hourlyRate").value = emp.emp_hourly_rate || 0;
+    document.getElementById("status").value = emp.emp_status || "Active";
+    document.getElementById("address").value = emp.emp_address || "";
 
-function hideForm() {
-    selectedID = null;
-    document.getElementById("employeeForm").reset();
-    document.getElementById("createEmployeeForm").classList.add("hidden");
-}
-
-function onSave() {
-    if (selectedID === null) {
-        addEmployee();
+    if (emp.emp_gender === "Female") {
+        document.getElementById("female").checked = true;
     } else {
-        updateEmployee();
+        document.getElementById("male").checked = true;
     }
 }
 
-//Pang Collect
-function collectEmployeeFormData() {
+// Reset button restores existing info if editing, or clears form if adding
+function resetEmployeeForm() {
+    if (selectedID !== null) {
+        const emp = employees.find(e => e.emp_id == selectedID);
+        if (emp) populateFormFields(emp);
+    } else {
+        document.getElementById("employeeForm").reset();
+    }
+}
+
+function hideEmployeeForm() {
+    selectedID = null;
+    document.getElementById("employeeForm").reset();
+    collapseFormInstance.hide();
+}
+
+// 3. FORM SUBMISSION (POST FOR CREATE, PUT FOR UPDATE WITH CONFIRMATION)
+function handleFormSubmit(event) {
+    event.preventDefault();
+    const isEdit = selectedID !== null;
+    const actionText = isEdit ? "update this employee's details" : "add this new employee";
+
+    showConfirmation(
+        isEdit ? "Confirm Update" : "Confirm Addition",
+        `Are you sure you want to ${actionText}?`,
+        () => isEdit ? updateEmployee() : addEmployee()
+    );
+}
+
+function collectFormData() {
     return {
         emp_firstname: document.getElementById("firstName").value,
         emp_lastname: document.getElementById("lastName").value,
@@ -145,32 +198,16 @@ function collectEmployeeFormData() {
         emp_contact_number: document.getElementById("contactNumber").value,
         emp_position: document.getElementById("position").value,
         emp_hourly_rate: document.getElementById("hourlyRate").value,
-        emp_status: document.getElementById("status").value
+        emp_status: document.getElementById("status").value,
+        emp_address: document.getElementById("address").value
     };
 }
 
-//ADD EMPLOYEE
 async function addEmployee() {
-    if (!validateEmployee()) return;
-
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const role = document.getElementById("loginRole").value;
-
-    if (!email || !validateEmail(email)) {
-        alert("A valid login email is required.");
-        return;
-    }
-    if (password.length < 6) {
-        alert("Password must be at least 6 characters.");
-        return;
-    }
-
     const payload = {
-        ...collectEmployeeFormData(),
-        acc_email: email,
-        acc_password: password,
-        acc_role: role
+        ...collectFormData(),
+        acc_email: document.getElementById("email").value,
+        acc_password: document.getElementById("password").value
     };
 
     try {
@@ -181,22 +218,23 @@ async function addEmployee() {
             body: JSON.stringify(payload)
         });
         const result = await response.json();
-        alert(result.message);
         if (result.success) {
-            hideForm();
-            refreshDashboard();
+            hideEmployeeForm();
+            loadEmployees();
+        } else {
+            alert(result.message || "Failed to add employee.");
         }
     } catch (error) {
-        console.error(error);
-        alert("Unable to add employee.");
+        console.error("Add error:", error);
     }
 }
 
-//UPDATE EMPLOYEE
 async function updateEmployee() {
-    if (!validateEmployee()) return;
-
-    const payload = { emp_id: selectedID, ...collectEmployeeFormData() };
+    const payload = {
+        emp_id: selectedID,
+        ...collectFormData(),
+        acc_email: document.getElementById("email").value
+    };
 
     try {
         const response = await fetch(ADMIN_API, {
@@ -206,21 +244,26 @@ async function updateEmployee() {
             body: JSON.stringify(payload)
         });
         const result = await response.json();
-        alert(result.message);
         if (result.success) {
-            hideForm();
-            refreshDashboard();
+            hideEmployeeForm();
+            loadEmployees();
+        } else {
+            alert(result.message || "Failed to update employee.");
         }
     } catch (error) {
-        console.error(error);
-        alert("Unable to update employee.");
+        console.error("Update error:", error);
     }
 }
 
-//DELETE EMPLOYEE
-async function deleteEmployee(id) {
-    if (!confirmDelete()) return;
+function promptDeleteEmployee(id) {
+    showConfirmation(
+        "Confirm Deletion",
+        "Are you sure you want to delete this employee? This action cannot be undone.",
+        () => deleteEmployee(id)
+    );
+}
 
+async function deleteEmployee(id) {
     try {
         const response = await fetch(ADMIN_API, {
             method: "DELETE",
@@ -229,155 +272,74 @@ async function deleteEmployee(id) {
             body: JSON.stringify({ emp_id: id })
         });
         const result = await response.json();
-        alert(result.message);
-        if (result.success) refreshDashboard();
-    } catch (error) {
-        console.error(error);
-        alert("Unable to delete employee.");
-    }
-}
-
-// ATTENDANCE(Para makita ng admin lahat)
-async function loadAttendance() {
-    const table = document.getElementById("attendanceTableBody");
-    try {
-        const response = await fetch(ATTENDANCE_API, { credentials: "same-origin" });
-        const result = await response.json();
-        table.innerHTML = "";
-
-        if (!result.success || result.data.length === 0) {
-            table.innerHTML = "<tr><td colspan='5' class='text-center py-6 text-gray-400'>No attendance records.</td></tr>";
-            return;
+        if (result.success) {
+            loadEmployees();
+        } else {
+            alert(result.message || "Failed to delete employee.");
         }
-
-        result.data.forEach(att => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td class="px-4 py-3">${escapeHtml(att.emp_firstname)} ${escapeHtml(att.emp_lastname)}</td>
-                <td class="px-4 py-3">${att.att_work_date}</td>
-                <td class="px-4 py-3">${att.att_clock_in}</td>
-                <td class="px-4 py-3">${att.att_clock_out ?? "—"}</td>
-                <td class="px-4 py-3">${att.att_total_hours ?? "—"}</td>
-            `;
-            table.appendChild(row);
-        });
     } catch (error) {
-        console.error(error);
+        console.error("Delete error:", error);
     }
 }
 
-// Payroll
 function populatePayrollDropdown() {
     const select = document.getElementById("payrollEmpId");
+    if (!select) return;
     select.innerHTML = employees
-        .map(e => `<option value="${e.emp_id}">${escapeHtml(e.emp_firstname)} ${escapeHtml(e.emp_lastname)}</option>`)
+        .map(e => `<option value="${e.emp_id}">${escapeHtml(e.emp_firstname)} ${escapeHtml(e.emp_lastname)} (ID: ${e.emp_id})</option>`)
         .join("");
 }
 
-async function loadPayroll() {
-    const table = document.getElementById("payrollTableBody");
-    try {
-        const response = await fetch(PAYROLL_API, { credentials: "same-origin" });
-        const result = await response.json();
-        table.innerHTML = "";
-
-        if (!result.success || result.data.length === 0) {
-            table.innerHTML = "<tr><td colspan='6' class='text-center py-6 text-gray-400'>No payroll records.</td></tr>";
-            return;
-        }
-
-        result.data.forEach(pay => {
-            const row = document.createElement("tr");
-            const payAction = pay.pay_status === "Pending"
-                ? `<button class="text-blue-600 hover:underline" onclick="markPaid(${pay.pay_id})">Mark Paid</button>`
-                : `<span class="text-gray-400 text-sm">—</span>`;
-            row.innerHTML = `
-                <td class="px-4 py-3">${escapeHtml(pay.emp_firstname)} ${escapeHtml(pay.emp_lastname)}</td>
-                <td class="px-4 py-3">${pay.pay_period_start} → ${pay.pay_period_end}</td>
-                <td class="px-4 py-3">${pay.pay_total_hours}</td>
-                <td class="px-4 py-3">₱${Number(pay.pay_amount).toFixed(2)}</td>
-                <td class="px-4 py-3">${statusBadge(pay.pay_status)}</td>
-                <td class="px-4 py-3 text-center">${payAction}</td>
-            `;
-            table.appendChild(row);
-        });
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function processPayroll(event) {
+function handlePayrollSubmit(event) {
     event.preventDefault();
     const empId = document.getElementById("payrollEmpId").value;
-    const start = document.getElementById("payPeriodStart").value;
-    const end = document.getElementById("payPeriodEnd").value;
+    const emp = employees.find(e => e.emp_id == empId);
+    const empName = emp ? `${emp.emp_firstname} ${emp.emp_lastname}` : `ID ${empId}`;
 
-    if (!empId || !start || !end) {
-        alert("Please select an employee and a full date range.");
-        return;
-    }
+    showConfirmation(
+        "Confirm Payroll",
+        `Are you sure you want to process payroll for ${empName}?`,
+        () => processPayroll()
+    );
+}
+
+async function processPayroll() {
+    const payload = {
+        emp_id: document.getElementById("payrollEmpId").value,
+        pay_period_start: document.getElementById("payPeriodStart").value,
+        pay_period_end: document.getElementById("payPeriodEnd").value
+    };
 
     try {
         const response = await fetch(PAYROLL_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
-            body: JSON.stringify({ emp_id: empId, pay_period_start: start, pay_period_end: end })
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
-        alert(result.message);
         if (result.success) {
-            document.getElementById("payrollForm").reset();
-            loadPayroll();
+            document.getElementById("payEmployeeForm").reset();
+            payModalInstance.hide();
+        } else {
+            alert(result.message || "Failed to process payroll.");
         }
     } catch (error) {
-        console.error(error);
-        alert("Unable to process payroll.");
+        console.error("Payroll error:", error);
     }
 }
 
-async function markPaid(payId) {
-    if (!confirm("Mark this payroll record as paid?")) return;
-    try {
-        const response = await fetch(PAYROLL_API, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            credentials: "same-origin",
-            body: JSON.stringify({ pay_id: payId })
-        });
-        const result = await response.json();
-        alert(result.message);
-        if (result.success) loadPayroll();
-    } catch (error) {
-        console.error(error);
-        alert("Unable to update payroll.");
+function showConfirmation(title, message, onConfirmCallback) {
+    document.getElementById("confirmModalTitle").textContent = title;
+    document.getElementById("confirmModalBody").textContent = message;
+    pendingAction = onConfirmCallback;
+    confirmationModalInstance.show();
+}
+
+function executeConfirmedAction() {
+    if (typeof pendingAction === "function") {
+        pendingAction();
     }
-}
-document.addEventListener("DOMContentLoaded", function () {
-    const btnMyProfile = document.getElementById("btnMyProfile");
-    if (!btnMyProfile) return;
-    btnMyProfile.addEventListener("click", goToMyProfile);
-});
-
-function goToMyProfile() {
-    window.location.href = "/Employee_Management_System/router/employee.php";
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    showAdminReturnIfApplicable();
-});
-
-function showAdminReturnIfApplicable() {
-    const role = sessionStorage.getItem("role");
-    const adminReturnBtn = document.getElementById("adminReturnBtn");
-
-    if (role === "admin" && adminReturnBtn) {
-        adminReturnBtn.classList.remove("d-none");
-    }
-}
-// Pang Refresh
-async function refreshDashboard() {
-    await loadEmployees();
-    loadAttendance();
-    loadPayroll();
+    confirmationModalInstance.hide();
+    pendingAction = null;
 }

@@ -23,6 +23,7 @@ class adminRepository
             $row['emp_position'],
             (float) ($row['emp_hourly_rate'] ?? 0.00),
             $row['emp_date_of_birth'] ?? null,
+            $row['emp_address']?? null,
             $row['emp_contact_number'] ?? null,
             (int) ($row['emp_id'] ?? 0),
             $row['emp_status'] ?? 'Active',
@@ -31,7 +32,7 @@ class adminRepository
     }
     public function getAllEmployees(): array
     {
-        $employees = $this->db->select('employees', '*');
+        $employees = $this->db->select('employees', '');
 
         if (!$employees) {
             return [];
@@ -56,15 +57,15 @@ class adminRepository
                 'emp_lastname'       => $employee->getEmpLastname(),
                 'emp_gender'         => $employee->getEmpGender(),
                 'emp_date_of_birth'  => $employee->getEmpDateOfBirth(),
+                'emp_address'        => $employee->getAddress(),
                 'emp_contact_number' => $employee->getEmpContactNumber(),
                 'emp_position'       => $employee->getEmpPosition(),
                 'emp_hourly_rate'    => $employee->getEmpHourlyRate(),
                 'emp_status'         => $employee->getEmpStatus(),
             ];
 
-            $this->db->insert('employees', $employeeData);
+            $empId = $this->db->insert('employees', $employeeData);
 
-            $empId = $this->conn->insert_id;
             $role = ($employeeData['emp_position']) === 'admin' ? 'admin' : 'employee';
             $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
@@ -127,6 +128,20 @@ class adminRepository
             $this->conn->rollback();
             throw new \Exception("Failed to search employee: " . $e->getMessage());
         }
+    }
+    public function emailExists($email, $excludeEmployeeId = null)
+    {
+        $result = $this->db->select('accounts', 'emp_id', ['acc_email' => $email]);
+
+        if ($result && $result->num_rows > 0) {
+            if ($excludeEmployeeId) {
+                $row = $result->fetch_assoc();
+                return $row['emp_id'] != $excludeEmployeeId;
+            }
+            return true;
+        }
+
+        return false;
     }
 
 }
