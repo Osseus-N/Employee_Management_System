@@ -54,8 +54,7 @@ function validateLogin() {
     if (!validatePassword(password)) {
         return false;
     }
-    return true;
-}
+    return true;}
 
 // EMPLOYEE CREATE/EDIT FORM (admin dashboard)
 function validateEmployee() {
@@ -101,14 +100,26 @@ function numbersOnly(event) {
     }
 }
 
-// Dapat Letter lang
 function lettersOnly(event) {
     const key = event.key;
     if (!/^[a-zA-Z ]$/.test(key) && key !== "Backspace" && key !== "Delete" && key !== "Tab") {
         event.preventDefault();
     }
 }
-
+function validateProfileForm(firstname, lastname, email, contact, address) {
+    if (isEmpty(firstname) || isEmpty(address) || isEmpty(email) || isEmpty(lastname)) {
+        alert("All form is required.");
+        return false;
+    }
+    if (!validateEmail(email)) {
+        alert("Invalid email address.");
+        return false;
+    }
+    if (!validatePhone(contact)) {
+        return false;
+    }
+    return true;
+}
 // AUTO-ATTACH INPUT RESTRICTIONS ON WHATEVER PAGE IS LOADED
 window.addEventListener("load", function () {
     const rate = document.getElementById("hourlyRate");

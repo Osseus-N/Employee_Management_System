@@ -75,15 +75,21 @@ class logInController extends ResponseController
     #[NoReturn]
     public function logout(): void
     {
-        SessionManager::init();
         SessionManager::destroySession();
-        header('Location: /employee_management_system');
-        exit;
+        $this->success("Logged out successfully");
+
     }
 
+    /**
+     * @throws \Exception
+     */
     private function seedDefaultAdminIfNeeded(): void
     {
         $employees = $this->adminRepository->getAllEmployees();
+
+        $data = $this->adminRepository->getAllEmployees();
+
+        $employees = $data['employees'] ?? [];
 
         if (empty($employees)) {
             $this->adminService->createDefaultAdmin();

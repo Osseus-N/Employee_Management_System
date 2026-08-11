@@ -2,7 +2,7 @@
 
 namespace model;
 
-class Employee
+class Employee implements \JsonSerializable
 {
     private ?int $empId;
     private string $empFirstname;
@@ -54,20 +54,21 @@ class Employee
     public function getEmpCreatedAt(): ?string { return $this->empCreatedAt; }
 
     public function getAddress(): ?string { return $this->empAddress; }
-    public function toArray(): array
-    {
-        return [
-            'emp_id'             => $this->empId,
-            'emp_firstname'      => $this->empFirstname,
-            'emp_lastname'       => $this->empLastname,
-            'emp_gender'         => $this->empGender,
-            'emp_date_of_birth'  => $this->empDateOfBirth,
-            'emp_address'        => $this->empAddress,
-            'emp_contact_number' => $this->empContactNumber,
-            'emp_position'       => $this->empPosition,
-            'emp_hourly_rate'    => $this->empHourlyRate,
-            'emp_status'         => $this->empStatus,
-            'emp_created_at'     => $this->empCreatedAt,
-        ];
-    }
+
+    public function jsonSerialize(): mixed
+     {
+         return [
+             'emp_id'             => $this->empId,
+             'emp_firstname'      => $this->empFirstname,
+             'emp_lastname'       => $this->empLastname,
+             'emp_gender'         => $this->empGender,
+             'emp_date_of_birth'  => $this->empDateOfBirth,
+             'emp_address'        => $this->empAddress,
+             'emp_contact_number' => $this->empContactNumber,
+             'emp_position'       => $this->empPosition,
+             'emp_hourly_rate'    => $this->empHourlyRate,
+             'emp_status'         => $this->empStatus,
+             'emp_created_at'     => $this->empCreatedAt,
+         ];
+     }
 }

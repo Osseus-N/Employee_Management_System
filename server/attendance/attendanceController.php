@@ -14,42 +14,55 @@ class attendanceController extends responseController
         $this->service = $attendanceService;
     }
 
-    public function getMonthlyAttendance(): array
+    public function getMonthlyAttendance(): void
     {
         SessionManager::isLoggedIn();
 
-        $empId = isset($_GET['emp_id']) ? (int)$_GET['emp_id'] : null;
-        $month = isset($_GET['month']) ? (string)$_GET['month'] : null;
-        $year  = isset($_GET['year']) ? (string)$_GET['year'] : null;
+        $empId = $_SESSION["emp_id"];
+        $month = date('m');
+        $year  = date('Y');
 
-        return $this->service->getMonthlyAttendance($empId, $month, $year);
+        $monthlyAttendance = $this->service->getMonthlyAttendance($empId, $month, $year);
 
+        if($monthlyAttendance === null){
+            $this->error("Date is not valid" , 403);
+        }
+
+        $this->success(
+            "Monthly Attendance successfully retrieved",
+            ["month" => $month,
+            "year" => $year,
+            "monthlyAttendance" => $monthlyAttendance]
+        );
     }
 
     public function markAttendance(): void
     {
         SessionManager::isLoggedIn();
 
-        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        $empId = $_SESSION['emp_id'] ?? null;
 
-        if (empty($data['emp_id']) || empty($data['status']) || empty($data['date'])) {
-            $this->error('Invalid or missing parameters (emp_id, date, status required).', 400);
+        if (empty($empId)) {
+            $this->error('Unauthorized.', 401);
         }
+        $date = date('Y-m-d');
+        $saved = $this->service->recordAttendance($empId, $date);
 
-        $saved = $this->service->recordAttendance(
-            $data['emp_id'],
-            $data['date'],
-            $data['status']
-        );
-
-        if ($saved) {
+        if ($saved === true) {
             $this->success('Attendance logged successfully', [
-                'emp_id' => $data['emp_id'],
-                'status' => $data['status'],
-                'date'   => $data['date']
+                'emp_id' => $empId,
+                'status' => 'success',
+                'date'   => $date
             ], 200);
         }
 
-        $this->error('Database operation failed.', 500);
+        if (is_array($saved)) {
+            $this->error(
+                $saved['message'] ?? 'Failed to record attendance.',
+                400
+            );
+        }
+
+        $this->error('Failed to record attendance.', 500);
     }
 }

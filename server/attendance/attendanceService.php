@@ -14,61 +14,66 @@ class attendanceService
         $this->repo = $attendanceRepository;
 
     }
-    public function recordAttendance($emp_id, $date ,$status): array
+    public function recordAttendance($emp_id, $date): array|bool
     {
+        if ($this->isWeekend($date)) {
+            return [
+                "status" => "failed",
+                "message" => "Weekend not allowed",
+            ];
+        }
 
         $existing = $this->repo->checkAttendance($emp_id, $date);
 
-        if($existing){
+        if ($existing) {
             return [
-                'success' => false,
-                'message' => 'Already marked as present'
+                "status" => "failed",
+                "message" => "Attendance already exists",
             ];
         }
 
-        $saves = $this->repo->insertAttendance($emp_id, $date, $status);
-        return [
-            'success' => $saves,
-            'message' => 'Attendance Marked Successfully'
-        ];
+        return $this->repo->insertAttendance($emp_id, $date);
     }
 
-    public function getMonthlyAttendance($emp_id, $month, $year): array
+    private function isWeekend($date): bool
     {
-        $this->isDateValid($month, $year);
-
-        $data = $this->repo->getMonthlyAttendance($emp_id, $month, $year);
-
-        return [
-            'success' => true,
-            'data' => $data
-        ];
+        $dayOfWeek = date('N', strtotime($date));
+        return $dayOfWeek >= 6;
     }
-    public function presentAttendance($emp_id, $month, $year): array{
 
-        $this->isDateValid($month, $year);
+    public function getMonthlyAttendance($emp_id, $month, $year): false|array|null
+    {
+        $isDateValid = $this->isDateValid($month, $year);
 
-        $data = $this->repo->presentDays($emp_id, $month, $year);
-
-        return [
-            'success' => true,
-            'data' => $data
-        ];
+        if($isDateValid === false){
+            return false;
+        }
+        return $this->repo->getMonthlyAttendance($emp_id, $month, $year);
     }
-    private function isDateValid($month, $year){
-        if ($month < 1 || $month > 12) {
-            return [
-                'success' => false,
-                'message' => 'Invalid month provided. Month must be between 1 and 12.'
-            ];
+    public function presentAttendance($emp_id, $payroll_start_date, $payroll_end_date): int
+    {
+        if (empty($emp_id) || empty($payroll_start_date) || empty($payroll_end_date)) {
+            return 0;
         }
 
-        $currentYear = (int)date('Y');
-        if ($year < 2000 || $year > ($currentYear + 1)) {
-            return [
-                'success' => false,
-                'message' => 'Invalid year provided.'
-            ];
+        if ($payroll_start_date > $payroll_end_date) {
+            return 0;
         }
+
+        return $this->repo->presentDays(
+            $emp_id,
+            $payroll_start_date,
+            $payroll_end_date
+        );
+    }
+    private function isDateValid($month, $year): bool{
+
+        if($month > 12 || $month < 1){
+            return false;
+        }
+        if($year > date("Y")){
+            return false;
+        }
+        return true;
     }
 }

@@ -1,4 +1,3 @@
-const LOGIN_API = '/employee_management_system/login';
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginForm")?.addEventListener("submit", login);

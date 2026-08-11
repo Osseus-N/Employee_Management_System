@@ -8,16 +8,22 @@ class employeeService
     public function __construct(employeeRepository $employeeRepository){
         $this->employeeRepository = $employeeRepository;
     }
-    public function editEmployee($emp_id, $data){
+    public function editEmployee($emp_id, $data)
+    {
+        $accData = [
+            'acc_email' => $data['acc_email'],
+        ];
 
-        $user = $this->employeeRepository->editEmployee('employee' , $data, ['emp_id' => $emp_id]);
+        unset($data['acc_email']);
 
-        if($user) {
-            unset($user['password']);
+        $updated = $this->employeeRepository->editEmployee($data,$accData ,$emp_id);
 
-            return $user;
+        if (!$updated) {
+            return null;
         }
-        return null;
+
+        return $this->getEmployee($emp_id);
+
     }
     public function getEmployee(mixed $emp_id): false|array|null
     {

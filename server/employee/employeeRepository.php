@@ -3,6 +3,7 @@
 namespace employee;
 
 use Database;
+use Exception;
 
 class employeeRepository
 {
@@ -27,10 +28,43 @@ class employeeRepository
 
         return $result['acc_email'] ?? null;
     }
-    public function editEmployee($table, $data, $where){
+    public function editEmployee($data, $accData,$emp_id): bool
+    {
+        try {
+            $this->conn->begin_transaction();
 
-        $data = $this->db->update($table, $data, $where);
-        return $data;
+            $employee = $this->db->select('employees', "*",['emp_id' => $emp_id]);
 
+            if (!$employee) {
+                $this->conn->rollBack();
+                return false;
+            }
+
+            $accountUpdated = $this->db->update('accounts', $accData, ['emp_id' => $emp_id]);
+
+            if (!$accountUpdated) {
+                $this->conn->rollBack();
+                return false;
+            }
+
+            $employeeUpdated = $this->db->update(
+                'employees',
+                $data,
+                ['emp_id' => $emp_id]
+            );
+
+            if (!$employeeUpdated) {
+                $this->conn->rollBack();
+                return false;
+            }
+
+            $this->conn->commit();
+
+            return true;
+
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
     }
 }

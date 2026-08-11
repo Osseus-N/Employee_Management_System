@@ -2,17 +2,20 @@
 
 namespace admin;
 
+use employee\employeeRepository;
 use employee\employeeService;
 use model\Employee;
 
 class adminService
 {
     private adminRepository $adminRepository;
-    public function __construct(adminRepository $adminRepository){
+    private employeeRepository $employeeRepository;
+    public function __construct(adminRepository $adminRepository, employeeRepository $employeeRepository){
+        $this->employeeRepository = $employeeRepository;
         $this->adminRepository = $adminRepository;
     }
 
-    public function getAllEmployee(){
+    public function getAllEmployees(){
         return $this->adminRepository->getAllEmployees();
     }
     public function searchEmployee(string $search):array{
@@ -44,7 +47,7 @@ class adminService
             throw new \InvalidArgumentException("Invalid email format.");
         }
 
-        if (strlen($data['password']) < 8) {
+        if (strlen($data['acc_password']) < 8) {
             throw new \InvalidArgumentException("Password must be at least 8 characters.");
         }
 
@@ -59,32 +62,26 @@ class adminService
             $data['emp_contact_number'] ?? null,
             $data['emp_status'] ?? 'Active',
         );
-         return $this->adminRepository->createEmployee($employee, trim($data['email']), $data['password']);
+         return $this->adminRepository->createEmployee($employee, trim($data['acc_email']), $data['acc_password']);
     }
-    public function editEmployee(mixed $data)
+    public function editEmployee($empId, mixed $data)
     {
         if (empty($empId) || empty($data)) {
             return false;
         }
 
-        $updateFields = [];
+        $accData = ['acc_email' => $data['acc_email']];
 
-        if (!empty($data['firstname']))      $updateFields['emp_firstname']      = $data['firstname'];
-        if (!empty($data['lastname']))       $updateFields['emp_lastname']       = $data['lastname'];
-        if (!empty($data['gender']))         $updateFields['emp_gender']         = $data['gender'];
-        if (!empty($data['position']))       $updateFields['emp_position']       = $data['position'];
-        if (isset($data['hourly_rate']))     $updateFields['emp_hourly_rate']    = (float) $data['hourly_rate'];
-        if (isset($data['dob']))             $updateFields['emp_date_of_birth']  = $data['dob'];
-        if (isset($data['contact_number']))  $updateFields['emp_contact_number'] = $data['contact_number'];
-        if (isset($data['status']))          $updateFields['emp_status']         = $data['status'];
-
-        if (empty($updateFields)) {
-            return false;
+        if($data['acc_password']) {
+            $hashedPassword = password_hash($data['acc_password'], PASSWORD_DEFAULT);
+            $accData['acc_password'] = $hashedPassword;
         }
 
-        $where = ['emp_id' => $empId];
-
-        return $this->adminRepository->updateEmployee($updateFields, $where, 'employees');
+        unset(
+            $data['acc_email'],
+            $data['acc_password'],
+        );
+        return $this->employeeRepository->editEmployee($data, $accData ,$empId);
     }
 
     public function deleteEmployee(mixed $emp_id){
@@ -106,7 +103,7 @@ class adminService
             empFirstname:      'Admin',
             empLastname:       'Employee',
             empGender:         'Other',
-            empPosition:       'admin',
+            empPosition:       'Admin',
             empHourlyRate:     0.00,
             empDateOfBirth:    '2000-01-01',
             empAddress:        'Manila City',
@@ -123,6 +120,5 @@ class adminService
             $defaultAdminPassword
         );
 
-        header('Location: /employee_management_system/');
     }
 }

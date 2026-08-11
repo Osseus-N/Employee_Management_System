@@ -25,27 +25,36 @@ class adminRepository
             $row['emp_date_of_birth'] ?? null,
             $row['emp_address']?? null,
             $row['emp_contact_number'] ?? null,
-            (int) ($row['emp_id'] ?? 0),
             $row['emp_status'] ?? 'Active',
-            $row['emp_created_at'] ?? null
+            (int) ($row['emp_id'] ?? 0),
+        $row['emp_created_at'] ?? null
         );
     }
     public function getAllEmployees(): array
     {
-        $employees = $this->db->select('employees', '');
+        $employees = $this->db->select('employees', '*');
+        $accounts = $this->db->select(
+            'accounts',
+            'emp_id, acc_email'
+        );
 
-        if (!$employees) {
+        if (!$employees || !$accounts) {
             return [];
         }
 
-        $rows = $employees->fetch_all(MYSQLI_ASSOC);
+        $employeeRows = $employees->fetch_all(MYSQLI_ASSOC);
+        $accountRows = $accounts->fetch_all(MYSQLI_ASSOC);
 
         $users = [];
-        foreach ($rows as $row) {
+
+        foreach ($employeeRows as $row) {
             $users[] = $this->rowToEmployee($row);
         }
 
-        return $users;
+        return [
+            'employees' => $users,
+            'accounts' => $accountRows
+        ];
     }
     public function createEmployee(Employee $employee, string $email, string $rawPassword): bool
     {
@@ -66,7 +75,7 @@ class adminRepository
 
             $empId = $this->db->insert('employees', $employeeData);
 
-            $role = ($employeeData['emp_position']) === 'admin' ? 'admin' : 'employee';
+            $role = ($employeeData['emp_position']) === 'Admin' ? 'Admin' : 'Employee';
             $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
             $accountData = [
@@ -85,13 +94,6 @@ class adminRepository
             $this->conn->rollback();
             throw new \Exception("Failed to register employee and account: " . $e->getMessage());
         }
-    }
-    public function updateEmployee($data, $where, $table): ?bool
-    {
-
-        $data = $this->db->update($table, $data, $where);
-        return $data;
-
     }
     public function deleteEmployee($emp_id): void
     {

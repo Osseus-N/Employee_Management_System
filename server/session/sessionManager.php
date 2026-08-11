@@ -30,6 +30,7 @@ class sessionManager
         if(!isset($_SESSION["emp_id"])){
             http_response_code(401);
             echo json_encode(array("error" => "You must log in to access this page."));
+            header("Location: /Employee_Management_System/login");
             exit;
         }
 
@@ -68,6 +69,8 @@ class sessionManager
 
     public static function destroySession(): void
     {
+        self::init();
+
         $_SESSION = [];
 
         if (isset($_COOKIE[session_name()])) {

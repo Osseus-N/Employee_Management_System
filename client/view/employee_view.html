@@ -6,9 +6,7 @@
     <title>Employee Portal - Self Service</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="employee-style.css" rel="stylesheet">
-    <script src="../script/validation.js"></script>
-    <script src="../script/admin.js"></script>
+    <link href="/employee_management_system/client/view/style/employee-style.css" rel="stylesheet">
 </head>
 <body>
 
@@ -18,11 +16,11 @@
 
         <div class="d-flex align-items-center gap-3">
 
-            <a href="/employee_management_system/admin" id="adminReturnBtn" class="btn btn-dark btn-sm" >
+            <span class="fw-semibold" id="welcomeGreeting"></span>
+
+            <a href="/employee_management_system/admin" id="adminReturnBtn" class="btn btn-dark btn-sm d-none">
                 <i class="bi bi-speedometer2 me-1"></i> Admin Dashboard
             </a>
-
-            <span class="fw-semibold" id="welcomeGreeting"></span>
 
             <button id="btnLogout" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-box-arrow-right me-1"></i> Logout
@@ -120,10 +118,9 @@
                             <thead>
                             <tr>
                                 <th>Pay Period</th>
-                                <th>Hours Worked</th>
-                                <th>Gross Pay</th>
-                                <th>Net Pay</th>
-                                <th>Action</th>
+                                <th>Total Days</th>
+                                <th>Amount</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody id="payrollTableBody"></tbody>
@@ -138,9 +135,12 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/employee_management_system/client/script/employee.js"></script>
-<script src="/employee_management_system/client/script/logout.js"></script>
+<script src="/employee_management_system/client/script/api.js"></script>
 <script src="/employee_management_system/client/script/validation.js"></script>
+<script src="/employee_management_system/client/script/employee.js"></script>
+<script src="/employee_management_system/client/script/attendance.js"></script>
+<script src="/employee_management_system/client/script/logout.js"></script>
+
 
 </body>
 </html>

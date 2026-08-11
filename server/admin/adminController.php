@@ -34,25 +34,24 @@ class adminController extends responseController
             exit;
         }
 
-        if (($_SESSION['role'] ?? null) !== 'admin') {
+        if (($_SESSION['role'] ?? null) !== 'Admin') {
             header("Location: /employee_management_system/employee");
             exit;
         }
 
-        header("Content-Type : text/html; charset=UTF-8");
+        header("Content-Type: text/html; charset=UTF-8");
         include __DIR__ . '/../../client/view/admin_view.html';
     }
 
     public function getAllEmployee(): void
     {
-        $employees = $this->adminService->getAllEmployee();
+        $employees = $this->adminService->getAllEmployees();
 
         if (!empty($employees)) {
             $this->success('Employees retrieved successfully', $employees);
-            return;
         }
 
-        $this->success('No employees found', []);
+        $this->error('No employees found');
     }
 
     public function getEmployeeById($id = null): void
@@ -131,7 +130,6 @@ class adminController extends responseController
 
         if ($updated) {
             $this->success('Employee successfully updated', ['emp_id' => $data['emp_id']]);
-            return;
         }
 
         $this->error('Failed to update employee details.');

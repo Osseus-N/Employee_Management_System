@@ -77,6 +77,10 @@ class Database
     public function select($table, $row = "*", $where = null)
     {
         try {
+            if (empty($row)) {
+                $row = "*";
+            }
+
             if (!empty($where) && is_array($where)) {
                 $conditions = [];
                 $types = "";
@@ -100,7 +104,6 @@ class Database
 
             $stmt->execute();
             return $stmt->get_result();
-
         } catch (Exception $e) {
             die("Select Error: " . $e->getMessage());
         }
