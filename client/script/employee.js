@@ -1,39 +1,49 @@
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
 
 const currentPath = window.location.pathname;
-const isLoginPage = currentPath === "/employee_management_system" || currentPath === "/employee_management_system/login";
+const isLoginPage =
+    currentPath === "/employee_management_system" ||
+    currentPath === "/employee_management_system/login";
 
 if (!sessionStorage.getItem("role") && !isLoginPage) {
     window.location.href = "/employee_management_system/logout";
 }
-document.addEventListener("DOMContentLoaded", function () {
 
+document.addEventListener("DOMContentLoaded", function () {
     const name = sessionStorage.getItem("user");
     const welcomeGreeting = document.getElementById("welcomeGreeting");
 
     if (name && welcomeGreeting) {
         welcomeGreeting.textContent = "Welcome, " + name;
     }
+
     showAdminReturnIfApplicable();
 
-    if (document.getElementById("attendanceCalendar") || document.getElementById("employeeTableBody")) {
-        console.log("hello")
+    if (
+        document.getElementById("attendanceCalendar") ||
+        document.getElementById("employeeTableBody")
+    ) {
         loadDashboard();
     }
 
-    // Form submission handlers
     const profileForm = document.getElementById("profileForm");
-    if (profileForm) profileForm.addEventListener("submit", saveProfile);
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) logoutBtn.addEventListener("click", logout);
+    if (profileForm) {
+        profileForm.addEventListener("submit", saveProfile);
+    }
+
+    setupLogoutModal();
 });
 
 function showAdminReturnIfApplicable() {
     const role = sessionStorage.getItem("role");
     const adminReturnBtn = document.getElementById("adminReturnBtn");
+
     if (role === "admin" && adminReturnBtn) {
-        adminReturnBtn.classList.remove("d-none");
+        adminReturnBtn.classList.remove("hidden");
     }
 }
 
@@ -57,12 +67,14 @@ async function loadDashboard() {
             return;
         }
 
-        const {user, attendance, payroll} = result.data;
+        const { user, attendance, payroll } = result.data;
 
         if (user) {
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.value = val ?? "";
+            const setVal = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = value ?? "";
+                }
             };
 
             setVal("empFirstName", user.emp_firstname);
@@ -74,6 +86,7 @@ async function loadDashboard() {
         }
 
         const attendanceMap = {};
+
         if (Array.isArray(attendance)) {
             attendance.forEach(att => {
                 if (att.att_work_date) {
@@ -82,7 +95,11 @@ async function loadDashboard() {
             });
         }
 
-        renderCalendar(document.getElementById("attendanceCalendar"), attendanceMap);
+        renderCalendar(
+            document.getElementById("attendanceCalendar"),
+            attendanceMap
+        );
+
         renderPayrollTable(payroll);
 
     } catch (error) {
@@ -91,153 +108,225 @@ async function loadDashboard() {
     }
 }
 
-    function renderPayrollTable(payroll) {
-        const table = document.getElementById("payrollTableBody");
-        if (!table) return;
+function renderPayrollTable(payroll) {
+    const table = document.getElementById("payrollTableBody");
 
-        table.innerHTML = "";
+    if (!table) return;
 
-        if (!payroll || payroll.length === 0) {
-            table.innerHTML = "<tr><td colspan='4' class='text-center py-3 text-muted'>No payroll records yet.</td></tr>";
-            return;
-        }
+    table.innerHTML = "";
 
-        payroll.forEach(pay => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-            <td class="px-3 py-2">${pay.payroll_start_date} → ${pay.payroll_end_date}</td>
-            <td class="px-3 py-2">${Number(pay.pay_total_days)}</td>
-            <td class="px-3 py-2">₱${Number(pay.pay_amount).toFixed(2)}</td>
-            <td class="px-3 py-2">${payStatusBadge(pay.pay_status)}</td>
+    if (!payroll || payroll.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-5 text-gray-500">
+                    No payroll records yet.
+                </td>
+            </tr>
         `;
-            table.appendChild(row);
+        return;
+    }
+
+    payroll.forEach(pay => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-50";
+
+        row.innerHTML = `
+            <td class="px-3 py-3">
+                ${pay.payroll_start_date} → ${pay.payroll_end_date}
+            </td>
+            <td class="px-3 py-3">
+                ${Number(pay.pay_total_days)}
+            </td>
+            <td class="px-3 py-3">
+                ₱${Number(pay.pay_amount).toFixed(2)}
+            </td>
+            <td class="px-3 py-3">
+                ${payStatusBadge(pay.pay_status)}
+            </td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+function payStatusBadge(status) {
+    const isPaid = status?.toLowerCase() === "paid";
+    const bgClass = isPaid ? "bg-green-600 text-white" : "bg-yellow-400 text-gray-900";
+
+    return `
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${bgClass}">
+            ${status ?? "Pending"}
+        </span>
+    `;
+}
+
+function renderCalendar(container, attendanceMap) {
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    const header = document.createElement("div");
+    header.className = "text-base font-semibold text-gray-900 mb-3";
+    header.textContent = `${MONTH_NAMES[month]} ${year}`;
+    container.appendChild(header);
+
+    const weekdayRow = document.createElement("div");
+    weekdayRow.className = "grid grid-cols-7 gap-2 w-fit mb-2";
+
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(day => {
+        const label = document.createElement("span");
+        label.className = "w-9 h-7 flex items-center justify-center text-xs text-gray-600";
+        label.textContent = day;
+        weekdayRow.appendChild(label);
+    });
+
+    container.appendChild(weekdayRow);
+
+    const grid = document.createElement("div");
+    grid.className = "grid grid-cols-7 gap-2 w-fit";
+
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let b = 0; b < firstDayOfWeek; b++) {
+        const blankCell = document.createElement("span");
+        blankCell.className = "w-9 h-9";
+        grid.appendChild(blankCell);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isFuture = date > today;
+
+        const cell = document.createElement("span");
+        cell.className = "w-9 h-9 flex items-center justify-center";
+        cell.title = dateStr;
+
+        const dayBox = document.createElement("span");
+        dayBox.textContent = day;
+        dayBox.className = "w-9 h-9 flex items-center justify-center rounded-md text-xs";
+
+        cell.appendChild(dayBox);
+
+        if (isFuture) {
+            dayBox.className = "w-9 h-9 flex items-center justify-center rounded-md bg-gray-200 text-gray-700";
+        } else if (attendanceMap[dateStr]) {
+            dayBox.className = "w-9 h-9 flex items-center justify-center rounded-md bg-green-600 text-white";
+            cell.title += " — Present";
+        } else if (isWeekend) {
+            dayBox.className = "w-9 h-9 flex items-center justify-center rounded-md bg-yellow-500 text-gray-900";
+            cell.title += " — Weekend";
+        } else {
+            dayBox.className = "w-9 h-9 flex items-center justify-center rounded-md bg-red-500 text-white";
+            cell.title += " — Absent";
+        }
+
+        grid.appendChild(cell);
+    }
+
+    const totalCells = firstDayOfWeek + daysInMonth;
+    const trailingBlanks = (7 - (totalCells % 7)) % 7;
+
+    for (let t = 0; t < trailingBlanks; t++) {
+        const blankCell = document.createElement("span");
+        blankCell.className = "w-9 h-9";
+        grid.appendChild(blankCell);
+    }
+
+    container.appendChild(grid);
+}
+
+async function saveProfile(event) {
+    event.preventDefault();
+
+    const firstname = document.getElementById("empFirstName")?.value || "";
+    const lastname = document.getElementById("empLastName")?.value || "";
+    const contact = document.getElementById("empContact")?.value ||
+        document.getElementById("empPhone")?.value || "";
+    const email = document.getElementById("empEmail")?.value || "";
+    const address = document.getElementById("empAddress")?.value || "";
+
+    try {
+        const isValid = validateProfileForm(
+            firstname,
+            lastname,
+            email,
+            contact,
+            address
+        );
+
+        if (isValid === false) return;
+
+        const payload = {
+            emp_firstname: firstname,
+            emp_lastname: lastname,
+            emp_contact_number: contact,
+            emp_address: address,
+            acc_email: email
+        };
+
+        const response = await fetch(`${EMPLOYEE_API}/update`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "same-origin",
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        alert(result.message);
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to update profile.");
+    }
+}
+
+function setupLogoutModal() {
+    const logoutBtn = document.getElementById("btnLogout");
+    const logoutModal = document.getElementById("logoutModal");
+    const closeBtn = document.getElementById("closeLogoutModal");
+    const cancelBtn = document.getElementById("cancelLogoutBtn");
+    const confirmBtn = document.getElementById("confirmLogoutBtn");
+
+    if (!logoutBtn || !logoutModal) return;
+
+    function openModal() {
+        logoutModal.classList.remove("hidden");
+        logoutModal.classList.add("flex");
+    }
+
+    function closeModal() {
+        logoutModal.classList.remove("flex");
+        logoutModal.classList.add("hidden");
+    }
+
+    logoutBtn.addEventListener("click", openModal);
+
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener("click", function () {
+            sessionStorage.clear();
+            window.location.href = "/employee_management_system/logout";
         });
     }
 
-    function renderCalendar(container, attendanceMap) {
-        if (!container) return;
-        container.innerHTML = "";
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const year = today.getFullYear();
-        const month = today.getMonth();
-
-        const header = document.createElement("div");
-        header.className = "attendance-month-header";
-        header.textContent = `${MONTH_NAMES[month]} ${year}`;
-        container.appendChild(header);
-
-        const weekdayRow = document.createElement("div");
-        weekdayRow.className = "attendance-grid attendance-weekdays";
-        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(day => {
-            const label = document.createElement("span");
-            label.className = "attendance-weekday-label";
-            label.textContent = day;
-            weekdayRow.appendChild(label);
-        });
-        container.appendChild(weekdayRow);
-
-        const grid = document.createElement("div");
-        grid.className = "attendance-grid";
-
-        const firstDayOfWeek = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        for (let b = 0; b < firstDayOfWeek; b++) {
-            const blankCell = document.createElement("span");
-            blankCell.className = "attendance-cell blank";
-            grid.appendChild(blankCell);
+    logoutModal.addEventListener("click", function (event) {
+        if (event.target === logoutModal) {
+            closeModal();
         }
-
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const date = new Date(year, month, day);
-            const dayOfWeek = date.getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const isFuture = date > today;
-
-            const cell = document.createElement("span");
-            cell.title = dateStr;
-
-            const dayBox = document.createElement("span");
-            dayBox.className = "attendance-day-box";
-            dayBox.textContent = day;
-            cell.appendChild(dayBox);
-
-            if (isFuture) {
-                cell.className = "attendance-cell empty";
-            } else if (attendanceMap[dateStr]) {
-                cell.className = "attendance-cell present";
-                cell.title += " — Present";
-            } else if (isWeekend) {
-                cell.className = "attendance-cell weekend";
-                cell.title += " — Weekend";
-            } else {
-                cell.className = "attendance-cell absent";
-                cell.title += " — Absent";
-            }
-
-            grid.appendChild(cell);
-        }
-
-        const totalCells = firstDayOfWeek + daysInMonth;
-        const trailingBlanks = (7 - (totalCells % 7)) % 7;
-        for (let t = 0; t < trailingBlanks; t++) {
-            const blankCell = document.createElement("span");
-            blankCell.className = "attendance-cell blank";
-            grid.appendChild(blankCell);
-        }
-
-        container.appendChild(grid);
-    }
-
-    function payStatusBadge(status) {
-        const isPaid = status?.toLowerCase() === "paid";
-        const bgClass = isPaid ? "bg-success text-white" : "bg-warning text-dark";
-        return `<span class="badge ${bgClass}">${status ?? 'Pending'}</span>`;
-    }
-
-    async function saveProfile(event) {
-        event.preventDefault();
-
-        const firstname = document.getElementById("empFirstName")?.value || "";
-        const lastname = document.getElementById("empLastName")?.value || "";
-        const contact = document.getElementById("empContact")?.value || document.getElementById("empPhone")?.value || "";
-        const email = document.getElementById("empEmail")?.value || "";
-        const address = document.getElementById("empAddress")?.value || "";
-
-        try {
-
-            $isValid = validateProfileForm(firstname, lastname, email, contact, address)
-
-            if ($isValid === false) {
-                return;
-            }
-
-            const payload = {
-                emp_firstname: firstname,
-                emp_lastname: lastname,
-                emp_contact_number: contact,
-                emp_address: address,
-                acc_email: email
-            };
-
-
-            const response = await fetch(`${EMPLOYEE_API}/update`, {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                credentials: "same-origin",
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            alert(result.message);
-        } catch (error) {
-            console.error(error);
-            alert("Unable to update profile.");
-        }
-    }
-
-
-
+    });
+}

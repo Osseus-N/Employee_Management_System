@@ -25,7 +25,7 @@ class attendanceController extends responseController
         $monthlyAttendance = $this->service->getMonthlyAttendance($empId, $month, $year);
 
         if($monthlyAttendance === null){
-            $this->error("Date is not valid" , 403);
+            $this->error("Date is not valid" , 422);
         }
 
         $this->success(

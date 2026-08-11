@@ -45,11 +45,11 @@ class payrollController extends responseController
 
 
         if (empty($startDate) || empty($endDate)) {
-            $this->error('Payroll start date and end date are required.', 403);
+            $this->error('Payroll start date and end date are required.');
         }
 
         if ($startDate > $endDate) {
-            $this->error('Payroll start date cannot be later than the end date.',);
+            $this->error('Payroll start date cannot be later than the end date.');
         }
 
         $created = $this->payrollService->createSchedule($startDate,$endDate);
@@ -98,7 +98,7 @@ class payrollController extends responseController
         }
 
         if ($startDate > $endDate) {
-            $this->error('Payroll start date cannot be later than the end date.',);
+            $this->error('Payroll start date cannot be later than the end date.');
         }
 
         $updated = $this->payrollService->updateSchedule((int) $scheduleId,$startDate,$endDate);

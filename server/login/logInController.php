@@ -34,7 +34,7 @@ class logInController extends ResponseController
         $password = $data['password'] ?? '';
 
         if (empty($email) || empty($password)) {
-            $this->error('Email and password are required', 401);
+            $this->error('Email and password are required', 422);
             return;
         }
 
@@ -55,7 +55,7 @@ class logInController extends ResponseController
             return;
         }
 
-        $this->error('Invalid email or password', 401);
+        $this->error('Invalid email or password', 422);
     }
 
     public function showLoginForm(): void

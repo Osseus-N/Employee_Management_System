@@ -59,7 +59,7 @@ class adminController extends responseController
         $id = $id ?? $_GET['id'] ?? null;
 
         if (empty($id)) {
-            $this->error('Employee ID is required', 400);
+            $this->error('Employee ID is required');
             return;
         }
 
@@ -78,7 +78,7 @@ class adminController extends responseController
         $searchTerm = !empty($searchTerm) ? $searchTerm : ($_GET['search'] ?? '');
 
         if (empty(trim($searchTerm))) {
-            $this->error('Search query is required', 400);
+            $this->error('Search query is required');
             return;
         }
 
@@ -122,7 +122,7 @@ class adminController extends responseController
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
         if (empty($data['emp_id'])) {
-            $this->error('Employee ID is required', 400);
+            $this->error('Employee ID is required');
             return;
         }
 
@@ -162,11 +162,11 @@ class adminController extends responseController
         }
 
         if (empty($data['emp_id']) || empty($data['amount'])) {
-            $this->error('Employee ID and payment amount are required.', 400);
+            $this->error('Employee ID and payment amount are required.');
             return;
         }
 
-        $isPaid = $this->payrollService->payEmployee($data['emp_id'], $data['amount']);
+        $isPaid = $this->payrollService->payAllEmployees($data['schedule_id']);
 
         if ($isPaid) {
             $this->success('Payment processed successfully', [
