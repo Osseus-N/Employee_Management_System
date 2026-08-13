@@ -1,0 +1,54 @@
+@import "../../node_modules/tailwindcss/dist/lib.d.mts";
+
+.attendance-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 28px);
+    gap: 10px;
+    justify-content: start;
+}
+
+.attendance-weekday-label {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+.attendance-cell {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.attendance-day-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+}
+.attendance-month-header {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.attendance-cell {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.attendance-cell.present  { background-color: #26a641; }
+.attendance-cell.absent   { background-color: #f85149; }
+.attendance-cell.weekend  { background-color: #d29922; }
+.attendance-cell.empty    { background-color: #d6dad6
+}
